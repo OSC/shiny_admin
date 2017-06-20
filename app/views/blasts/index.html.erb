@@ -1,0 +1,39 @@
+<div class="page-header">
+  <h2>Listing Blasts</h2>
+</div>
+
+<table class="table data-table">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Status</th>
+      <th>Name</th>
+      <th>Sequence</th>
+      <th class="no-sort"></th>
+      <th class="no-sort"></th>
+      <th class="no-sort"></th>
+      <th class="no-sort"></th>
+      <th class="no-sort"></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @blasts.each do |blast| %>
+      <tr>
+        <td><%= blast.id %></td>
+        <td><%= status_label(blast) %></td>
+        <td><%= blast.name %></td>
+        <td><%= blast.sequence %></td>
+        <td><%= link_to 'Submit', submit_blast_path(blast), method: :put, class: 'btn btn-success btn-sm' unless blast.submitted? %></td>
+        <td><%= link_to 'Show', blast, class: 'btn btn-primary btn-sm' %></td>
+        <td><%= link_to 'Edit', edit_blast_path(blast), class: 'btn btn-default btn-sm' unless blast.submitted? %></td>
+        <td><%= link_to 'Copy', copy_blast_path(blast), method: :put, class: 'btn btn-default btn-sm' %></td>
+        <td><%= link_to 'Destroy', blast, method: :delete, class: 'btn btn-danger btn-sm', data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<%= link_to 'New Blast', new_blast_path %>
