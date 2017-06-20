@@ -1,17 +1,27 @@
-#PBS -N blast
-#PBS -l nodes=1:ppn=12
-#PBS -l walltime=01:00:00
-#PBS -q @oak-batch.osc.edu
+#!/bin/bash
+
+#PBS -N awesim/sys/gfam_scores
+#PBS -l walltime=00:09:59
+#PBS -l nodes=1:ppn=28:gpus=1
 #PBS -j oe
 #PBS -S /bin/bash
 
-echo "---Job started at:"
-date
+module load python/2.7
+module load blast
 
-echo "name = {{{name}}}"
-echo "sequence = {{{sequence}}}"
+# location of gfams_original_db.nhr, gfams_original_db.nin, and gfams_original_db.nsq
+export BLASTDB=/users/PAS0328/osu8697/website
 
-sleep 30
+# move files to $TMPDIR
+cd $PBS_O_WORKDIR
+cp -t $TMPDIR alignment_toolbox.py cudalign query2tree.py
+cd $TMPDIR
 
-echo "---Job finished at:"
-date
+# ensure that cudalign is accessible in the path for execution
+export PATH=$TMPDIR:$PATH
+
+# run query
+python query2tree.py "{{{ name }}}" {{{ sequence }}}
+
+# copy result
+cp outgraph.json $PBS_O_WORKDIR
