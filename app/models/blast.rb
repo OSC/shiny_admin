@@ -16,7 +16,7 @@ class Blast < ActiveRecord::Base
 
   # Build an array of Machete jobs that are then submitted to the batch server
   def build_jobs(staged_dir, job_list = [])
-    job_list << OSC::Machete::Job.new(script: staged_dir.join("main.sh"))
+    job_list << OSC::Machete::Job.new(script: staged_dir.join("main.sh"), host: "owens")
   end
 
   # Make copy of workflow
