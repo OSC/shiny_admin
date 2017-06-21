@@ -12,5 +12,10 @@
   <%= @blast.sequence %>
 </p>
 
+<p>
+  <strong>Staged Dir:</strong>
+  <%= link_to @blast.staged_dir, OodAppkit.files.url(path: Pathname.new(@blast.staged_dir)).to_s %>
+</p>
+
 <%= link_to 'Back', blasts_path, class: 'btn btn-default' %>
 <%= link_to 'Edit', edit_blast_path(@blast), class: 'btn btn-default' %>
