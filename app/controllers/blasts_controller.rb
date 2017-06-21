@@ -29,7 +29,7 @@ class BlastsController < ApplicationController
 
     respond_to do |format|
       if @blast.save
-        format.html { redirect_to @blast, notice: 'Blast was successfully created.' }
+        format.html { redirect_to blasts_url, notice: 'Blast was successfully created.' }
         format.json { render :show, status: :created, location: @blast }
       else
         format.html { render :new }
