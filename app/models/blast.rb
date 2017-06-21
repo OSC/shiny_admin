@@ -36,6 +36,16 @@ class Blast < ActiveRecord::Base
     self.dup
   end
 
+  def output
+    output = Dir.glob("#{self.staged_dir}/gfam_scores.o*").first
+    File.read output if output
+  end
+
+  def outgraph
+    output = Dir.glob("#{self.staged_dir}/outgraph.json").first
+    File.read output if output
+  end
+
   private
 
   def stage_workflow
