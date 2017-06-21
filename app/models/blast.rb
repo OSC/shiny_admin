@@ -12,6 +12,9 @@ class Blast < ActiveRecord::Base
     blast_jobs.to_a.each(&:update_status!)
   end
 
+  # get all blasts that have active jobs
+  scope :active, -> { joins(:blast_jobs).merge(BlastJob.active) }
+
   # Name that defines the template/target dirs
   def staging_template_name
     "blast"

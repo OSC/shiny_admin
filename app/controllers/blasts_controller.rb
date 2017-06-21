@@ -1,5 +1,6 @@
 class BlastsController < ApplicationController
   before_action :set_blast, only: [:show, :edit, :update, :destroy, :submit, :copy]
+  before_action :update_jobs, only: [:index, :show, :destroy]
 
   # GET /blasts
   # GET /blasts.json
@@ -106,5 +107,10 @@ class BlastsController < ApplicationController
     # Only allow a trusted parameter "white list" through.
     def blast_params
       params.require(:blast).permit!
+    end
+
+    def update_jobs
+      # get all of the active workflows
+      Blast.preload(:blast_jobs).active.to_a.each(&:update_status!)
     end
 end
