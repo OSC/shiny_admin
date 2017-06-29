@@ -12,10 +12,12 @@
   <%= @blast.sequence %>
 </p>
 
+<% if @blast.staged_dir %>
 <p>
   <strong>Staged Dir:</strong>
-  <%= link_to @blast.staged_dir, OodAppkit.files.url(path: Pathname.new(@blast.staged_dir)).to_s %>
+  <%= link_to @blast.staged_dir, OodAppkit.files.url(path: Pathname.new(@blast.staged_dir)).to_s, target: "_blank" %>
 </p>
+<% end %>
 
 <% if @blast.outgraph %>
   <p>
