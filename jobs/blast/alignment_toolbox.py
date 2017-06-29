@@ -42,7 +42,7 @@ def hier2Dict(gff3_file):
 		line = fin.readline();
 	line_vector = line.split('\t');
 	while line != '':						# Reads through file until footer
-		while line[0] == '#':					
+		while line[0] == '#':
 			line = fin.readline();
 			if line == '':
 				break;
@@ -142,27 +142,27 @@ def getRoots(aNeigh):
         while aNode != aRoot[aNode][0]:
             aNode = aRoot[aNode][0]
         return (aNode,aRoot[aNode][1])
-    myRoot = {} 
+    myRoot = {}
     for myNode in aNeigh.keys():
-        myRoot[myNode] = (myNode,0)  
-    for myI in aNeigh: 
-        for myJ in aNeigh[myI]: 
-            (myRoot_myI,myDepthMyI) = findRoot(myI,myRoot) 
-            (myRoot_myJ,myDepthMyJ) = findRoot(myJ,myRoot) 
-            if myRoot_myI != myRoot_myJ: 
+        myRoot[myNode] = (myNode,0)
+    for myI in aNeigh:
+        for myJ in aNeigh[myI]:
+            (myRoot_myI,myDepthMyI) = findRoot(myI,myRoot)
+            (myRoot_myJ,myDepthMyJ) = findRoot(myJ,myRoot)
+            if myRoot_myI != myRoot_myJ:
                 myMin = myRoot_myI
-                myMax = myRoot_myJ 
-                if  myDepthMyI > myDepthMyJ: 
+                myMax = myRoot_myJ
+                if  myDepthMyI > myDepthMyJ:
                     myMin = myRoot_myJ
                     myMax = myRoot_myI
                 myRoot[myMax] = (myMax,max(myRoot[myMin][1]+1,myRoot[myMax][1]))
-                myRoot[myMin] = (myRoot[myMax][0],-1) 
+                myRoot[myMin] = (myRoot[myMax][0],-1)
     myToRet = {}
-    for myI in aNeigh: 
+    for myI in aNeigh:
         if myRoot[myI][0] == myI:
             myToRet[myI] = []
-    for myI in aNeigh: 
-        myToRet[findRoot(myI,myRoot)[0]].append(myI) 
+    for myI in aNeigh:
+        myToRet[findRoot(myI,myRoot)[0]].append(myI)
     return myToRet
 
 # keep only latest version number genes (i.e. ENSGXXXXXXXXXXX.4 over ENSGXXXXXXXXXXX.1) O(nlogn)
@@ -179,7 +179,7 @@ def get_latest(fasta_dict):
 			for k in rep_keys:
 				del old_dict[k];
 	return new_dict;
-		
+
 
 # Returns the intersection of two lists
 def intersection(a,b):
@@ -199,7 +199,7 @@ def get_cons_genes(edge_file, fasta_file, delim, directed, par_num, gfam_st, gfa
 	keep_nodes = intersection(gene_fasta.keys(),nx_graph.nodes());				# Finds intersection of nx graph nodes and fasta genes (latest version)
 	rem_nodes = [node for node in nx_graph.nodes() if node not in keep_nodes];	# Creates lists of nodes to remove from nx graph
 	for node in rem_nodes:														# Removes gene-nodes from nx graph
-		nx_graph.remove_node(node);	
+		nx_graph.remove_node(node);
 	#****************************************************************
 	subgraphs = list(nx.connected_component_subgraphs(nx_graph));				# Finds subgraphs from nx graph
 	# Getting top <=2 consensus genes using BC and Alignscores
@@ -495,7 +495,7 @@ def generate_tree(search_sequence, search_name):
 			x=1;
 	gdict = fasta2Dict('/users/PAS0328/osu8697/recomb-2017/pg_fams/pgfam'+str(num)+'.fasta');
 	gdict[search_name] = search_sequence;
-	alignmat = alignMatrix_cuda(gdict, 1)*-1;		
+	alignmat = alignMatrix_cuda(gdict, 1)*-1;
 	print alignmat;
 	#generate maximum spanning tree
 	G = nx.from_numpy_matrix(alignmat);
@@ -504,7 +504,7 @@ def generate_tree(search_sequence, search_name):
 	i = 0;
 	for name in gdict.keys():
 		conv_dict[i] = name;
-		i = i+1; 
+		i = i+1;
 	H = nx.relabel_nodes(G,conv_dict);
 	T = nx.minimum_spanning_tree(H);
 	for u,v,d in T.edges(data=True):
@@ -545,14 +545,14 @@ def specClust(L,comps,k):
 	x,y = sc.vq.kmeans2(eigvecs[:,0:comps-1],k)
 	return y;
 
-	
-#************************************************************	
+
+#************************************************************
 # For testing
 def test(x):
 	import multiprocessing as mp
 	pool = mp.Pool(processes=12)
 	results = pool.map(run,range(1,40))
-	return results	
+	return results
 
 def run(y):
 		import os
