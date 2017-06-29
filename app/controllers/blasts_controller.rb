@@ -94,8 +94,8 @@ class BlastsController < ApplicationController
 
     respond_to do |format|
       if @blast.save
-        format.html { redirect_to @blast, notice: 'Blast was successfully copied.' }
-        format.json { render :show, status: :created, location: @blast }
+        format.html { redirect_to blasts_url, notice: 'Blast was successfully copied.' }
+        format.json { head :no_content }
       else
         format.html { redirect_to blasts_url, alert: "Blast failed to be copied: #{@blast.errors.to_a}" }
         format.json { render json: @blast.errors, status: :unprocessable_entity }
