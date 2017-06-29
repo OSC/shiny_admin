@@ -32,7 +32,7 @@
           <td><%= blast.jobids %></td>
           <td><%= status_label(blast) %></td>
           <td><%= blast.name %></td>
-          <td><%= blast.sequence %></td>
+          <td style="max-width: 200px; word-wrap: break-word;"><%= blast.sequence %></td>
           <td><%= link_to 'Submit', submit_blast_path(blast), method: :put, class: 'btn btn-success btn-sm' unless blast.submitted? %></td>
           <td><%= link_to 'Show', blast, class: 'btn btn-primary btn-sm' %></td>
           <td><%= link_to 'Edit', edit_blast_path(blast), class: 'btn btn-default btn-sm' unless blast.submitted? %></td>
