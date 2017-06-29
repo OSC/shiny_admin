@@ -2,6 +2,8 @@ class Blast < ActiveRecord::Base
   has_many :blast_jobs, dependent: :destroy
   has_machete_workflow_of :blast_jobs
 
+  validates_presence_of :name, :sequence
+
   # add accessors: [ :attr1, :attr2 ] etc. when you want to add getters and
   # setters to add new attributes stored in the JSON store
   # don't remove attributes from this list going forward! only deprecate
