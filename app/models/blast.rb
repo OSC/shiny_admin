@@ -13,6 +13,10 @@ class Blast < ActiveRecord::Base
     blast_jobs.to_a.each(&:update_status!)
   end
 
+  def job_name
+    ENV['APP_TOKEN'] || awesim/sys/gfam_scores
+  end
+
   # get all blasts that have active jobs
   scope :active, -> { joins(:blast_jobs).merge(BlastJob.active) }
 
