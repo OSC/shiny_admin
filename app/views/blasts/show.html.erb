@@ -12,6 +12,18 @@
   <%= @blast.sequence %>
 </p>
 
+<p>
+  <strong>Status:</strong>
+  <%= status_label(@blast) %>
+</p>
+
+<% unless @blast.jobids.blank? %>
+<p>
+  <strong>Job ID:</strong>
+  <%= @blast.jobids %>
+</p>
+<% end %>
+
 <% if @blast.staged_dir %>
 <p>
   <strong>Staged Dir:</strong>
@@ -22,7 +34,7 @@
 <% if @blast.outgraph %>
   <p>
     <strong>Graph Data:</strong>
-    <pre><%= @blast.outgraph %></pre>
+    <pre><%= JSON.pretty_generate(JSON.load(@blast.outgraph)) %></pre>
   </p>
 <% end %>
 
