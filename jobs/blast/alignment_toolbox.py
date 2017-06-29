@@ -483,7 +483,7 @@ def generate_tree(search_sequence, search_name):
 	#search gene_families for the gene returned by blastsearch
 	closest_gene = blastsearch(search_sequence, search_name);
 	# Find gene family with gene
-	for num in range(1,3283):
+	for num in range(1,3282):
 		try:
 			fin = open('/users/PAS0328/osu8697/recomb-2017/pgAmats/pgAmat'+str(num)+'.csv','rb');
 			line = fin.readline()
