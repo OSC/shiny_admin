@@ -1,5 +1,4 @@
 class BlastsController < ApplicationController
-  before_action :set_blast, only: [:show, :edit, :update, :destroy, :submit, :copy]
   before_action :update_jobs, only: [:index, :show, :destroy]
 
   # GET /blasts
@@ -11,6 +10,7 @@ class BlastsController < ApplicationController
   # GET /blasts/1
   # GET /blasts/1.json
   def show
+    set_blast
   end
 
   # GET /blasts/new
@@ -20,6 +20,7 @@ class BlastsController < ApplicationController
 
   # GET /blasts/1/edit
   def edit
+    set_blast
   end
 
   # POST /blasts
@@ -41,6 +42,7 @@ class BlastsController < ApplicationController
   # PATCH/PUT /blasts/1
   # PATCH/PUT /blasts/1.json
   def update
+    set_blast
     respond_to do |format|
       if @blast.update(blast_params)
         format.html { redirect_to @blast, notice: 'Blast was successfully updated.' }
@@ -55,6 +57,7 @@ class BlastsController < ApplicationController
   # DELETE /blasts/1
   # DELETE /blasts/1.json
   def destroy
+    set_blast
     respond_to do |format|
       if @blast.destroy
         format.html { redirect_to blasts_url, notice: 'Blast was successfully destroyed.' }
@@ -69,6 +72,7 @@ class BlastsController < ApplicationController
   # PUT /blasts/1/submit
   # PUT /blasts/1/submit.json
   def submit
+    set_blast
     respond_to do |format|
       if @blast.submitted?
         format.html { redirect_to blasts_url, alert: 'Blast has already been submitted.' }
@@ -85,6 +89,7 @@ class BlastsController < ApplicationController
 
   # PUT /blasts/1/copy
   def copy
+    set_blast
     @blast = @blast.copy
 
     respond_to do |format|
