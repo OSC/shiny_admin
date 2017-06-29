@@ -44,4 +44,8 @@ class Blast < ActiveRecord::Base
     output = Dir.glob("#{self.staged_dir}/outgraph.json").first
     File.read output if output
   end
+
+  def jobids
+    blast_jobs.map(&:pbsid).join(" ")
+  end
 end

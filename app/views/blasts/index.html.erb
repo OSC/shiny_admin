@@ -13,6 +13,7 @@
     <thead>
     <tr>
       <th>#</th>
+      <th>Job ID</th>
       <th>Status</th>
       <th>Name</th>
       <th>Sequence</th>
@@ -28,6 +29,7 @@
     <% @blasts.each do |blast| %>
         <tr>
           <td><%= blast.id %></td>
+          <td><%= blast.jobids %></td>
           <td><%= status_label(blast) %></td>
           <td><%= blast.name %></td>
           <td><%= blast.sequence %></td>
