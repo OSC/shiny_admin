@@ -1,3 +1,5 @@
 ---
-name: Blast Searches via generate_tree
-description: "Specify an application description.\r\nFollows YAML formatting (http://www.yaml.org/)"
+name: gfam BLAST Search
+description: "Run blast searchs against gfam database using generate_tree function"
+category: OSU Wexner Medical Center
+icon: fa://search
