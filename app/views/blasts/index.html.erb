@@ -9,7 +9,7 @@
 </div>
 
 <div class="row">
-  <table class="table data-table">
+  <table class="table">
     <thead>
     <tr>
       <th>#</th>
@@ -26,7 +26,7 @@
     </thead>
 
     <tbody>
-    <% @blasts.each do |blast| %>
+    <% @blasts.reverse_each do |blast| %>
         <tr>
           <td><%= blast.id %></td>
           <td><%= blast.jobids %></td>
