@@ -29,7 +29,7 @@
 
         <ul class="navbar-breadcrumbs">
           <li><%= link_to OodAppkit.dashboard.title, OodAppkit.dashboard.url.to_s %></li>
-          <li><%= link_to ENV['APP_NAME'].titleize, root_path %></li>
+          <li><%= link_to Rails.configuration.x.title, root_path %></li>
         </ul>
       </div>
 
