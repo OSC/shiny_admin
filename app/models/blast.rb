@@ -46,9 +46,8 @@ class Blast < ActiveRecord::Base
     output.read if output.file?
   end
 
-  def outgraph
-    output = Dir.glob("#{self.staged_dir}/outgraph.json").first
-    File.read output if output
+  def outgraph_file
+    Pathname.new(self.staged_dir).join("outgraph.json")
   end
 
   def jobids
