@@ -42,12 +42,16 @@ class Blast < ActiveRecord::Base
   end
 
   def output
+    return nil unless staged_dir
+
     output = Pathname.new(self.staged_dir).join("job.log")
     output.read if output.file?
   end
 
   def outgraph_file
-    Pathname.new(self.staged_dir).join("outgraph.json")
+    return nil unless staged_dir
+
+    Pathname.new(staged_dir).join("outgraph.json")
   end
 
   def jobids
