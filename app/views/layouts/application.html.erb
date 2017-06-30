@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
 
-  <title><%= ENV['APP_NAME'].titleize %></title>
+  <title><%= Rails.configuration.x.title %></title>
   <%= favicon_link_tag nil, href: OodAppkit.public.url.join('favicon.ico') %>
 
   <%= stylesheet_link_tag    "application", media: "all" %>
