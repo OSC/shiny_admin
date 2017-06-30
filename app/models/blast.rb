@@ -42,8 +42,8 @@ class Blast < ActiveRecord::Base
   end
 
   def output
-    output = Dir.glob("#{self.staged_dir}/gfam_scores.o*").first
-    File.read output if output
+    output = Pathname.new(self.staged_dir).join("job.log")
+    output.read if output.file?
   end
 
   def outgraph

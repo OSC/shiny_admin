@@ -3,8 +3,11 @@
 #PBS -N {{ job_name }}
 #PBS -l walltime=00:09:59
 #PBS -l nodes=1:ppn=28:gpus=1
+#PBS -o job.log
 #PBS -j oe
 #PBS -S /bin/bash
+
+echo "job running: $PBS_JOBID"
 
 module load python/2.7
 module load blast
@@ -25,3 +28,5 @@ python query2tree.py "{{{ name }}}" {{{ sequence }}}
 
 # copy result
 cp outgraph.json $PBS_O_WORKDIR
+
+echo "job completed: $PBS_JOBID"
