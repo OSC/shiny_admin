@@ -54,6 +54,17 @@ class Blast < ActiveRecord::Base
     Pathname.new(staged_dir).join("outgraph.json")
   end
 
+  # the only way to know if the file is badly formatted is to try to read it
+  def graph
+    if outgraph_file && outgraph_file.file?
+      @graph ||= JSON.load(outgraph_file.read)
+    else
+      nil
+    end
+  rescue
+    nil
+  end
+
   def jobids
     blast_jobs.map(&:pbsid).join(" ")
   end
