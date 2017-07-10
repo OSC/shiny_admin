@@ -31,10 +31,14 @@
 </p>
 <% end %>
 
-<% if @blast.outgraph_file && @blast.outgraph_file.file? %>
+<% if ! @blast.graph.nil? %>
+  <svg class="graph" width="100%" height="500"></svg>
+  <script>
+  genfdgraph(d3.select('svg'), <%=raw @blast.graph.to_json %>);
+  </script>
   <p>
     <strong>Graph Data:</strong>
-    <pre><%= JSON.pretty_generate(JSON.load(@blast.outgraph_file.read)) %></pre>
+    <pre><%= JSON.pretty_generate(@blast.graph) %></pre>
   </p>
 <% elsif @blast.completed? %>
   <div class="alert alert-danger">Results data (<%= @blast.outgraph_file.basename %>) not available. An error may have occurred.</div>
