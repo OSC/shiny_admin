@@ -4,23 +4,23 @@ function genfdgraph(svg, graph){
       width = svg._groups[0][0].scrollWidth,
       height = svg._groups[0][0].scrollHeight;
 
-  function dragstarted(d) {
+  var dragstarted = function(d) {
     if (!d3.event.active) simulation.alphaTarget(0.3).restart();
     d.fx = d.x;
     d.fy = d.y;
   }
-  function dragged(d) {
+  var dragged = function(d) {
     d.fx = d3.event.x;
     d.fy = d3.event.y;
   }
-  function dragended(d) {
+  var dragended = function(d) {
     if (!d3.event.active) simulation.alphaTarget(0);
     d.fx = null;
     d.fy = null;
   }
 
   //update display
-  d3.selectAll("svg > *").remove();
+  svg.selectAll().remove();
   simulation = d3.forceSimulation()
     .force("link", d3.forceLink())//.id(function(d) { return d.id; }))
     .force("charge", d3.forceManyBody().strength(function(d){return -20;}))
