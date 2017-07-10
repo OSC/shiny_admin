@@ -41,7 +41,7 @@
     <pre><%= JSON.pretty_generate(@blast.graph) %></pre>
   </p>
 <% elsif @blast.completed? %>
-  <div class="alert alert-danger">Results data (<%= @blast.outgraph_file.basename %>) not available. An error may have occurred.</div>
+  <div class="alert alert-danger">Results data <%= "(#{@blast.outgraph_file.basename})" if @blast.outgraph_file %> not available. An error may have occurred.</div>
 <% end %>
 
 <% if @blast.output %>
