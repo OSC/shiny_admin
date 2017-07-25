@@ -4,6 +4,18 @@ function genfdgraph(svg, graph){
       width = svg._groups[0][0].scrollWidth,
       height = svg._groups[0][0].scrollHeight;
 
+  var render_table_template = (function(){
+    var source = $("#graph-table-template").html();
+    var template = Handlebars.compile(source);
+
+    return function(context){
+      var html = template(context);
+      $("#graph-table-wrapper").html(html);
+    };
+  })();
+
+  render_table_template({rows: []});
+
 
   var updateSelectedNode = function(selected_node, all_nodes, d){
     // deselect previous selected nodes
@@ -22,10 +34,7 @@ function genfdgraph(svg, graph){
     });
 
     // render table rows
-    var template = Handlebars.compile("{{#rows}}<tr><td>{{accession}}</td><td>{{name}}</td><td>{{description}}</td></tr>{{/rows}}{{^rows}}No data avail.{{/rows}}");
-    var html = template({rows: d_zipped });
-
-    $("table.graph tbody").html(html);
+    render_table_template({rows: d_zipped, id: d.id, gene: d.gene_symbol });
   };
 
   var dragstarted = function(d) {
