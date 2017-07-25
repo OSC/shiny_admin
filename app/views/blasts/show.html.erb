@@ -34,7 +34,7 @@
 <% if ! @blast.graph.nil? %>
   <svg class="graph" width="100%" height="500"></svg>
   <script>
-  genfdgraph(d3.select('svg'), <%=raw @blast.graph.to_json %>);
+  genfdgraph(d3.select('svg.graph'), <%=raw @blast.graph.to_json %>);
   </script>
   <p>
     <strong>Graph Data:</strong>
