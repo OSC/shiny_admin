@@ -33,6 +33,19 @@
 
 <% if ! @blast.graph.nil? %>
   <svg class="graph" width="100%" height="500"></svg>
+  <table class="graph table table-condensed table-striped">
+    <caption>Selected node: TODO</caption>
+    <thead>
+      <tr>
+        <th>GO Accession</th>
+        <th>GO Name</th>
+        <th>GO Description</th>
+      </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+
   <script>
   genfdgraph(d3.select('svg.graph'), <%=raw @blast.graph.to_json %>);
   </script>

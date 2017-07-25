@@ -4,15 +4,28 @@ function genfdgraph(svg, graph){
       width = svg._groups[0][0].scrollWidth,
       height = svg._groups[0][0].scrollHeight;
 
+
   var updateSelectedNode = function(selected_node, all_nodes, d){
     // deselect previous selected nodes
     all_nodes.classed("selected", false);
 
     // select new node
     selected_node.classed("selected", true);
-    console.log(d);
 
-    // TODO: update selected_node data view
+    // convert separate arrays into 1 array of objects
+    d_zipped = _.zipWith(d.GOaccessions, d.GOdescriptions, d.GOnames, function(accession, description, name){
+      return {
+        accession: accession,
+        description: description,
+        name: name
+      };
+    });
+
+    // render table rows
+    var template = Handlebars.compile("{{#rows}}<tr><td>{{accession}}</td><td>{{name}}</td><td>{{description}}</td></tr>{{/rows}}{{^rows}}No data avail.{{/rows}}");
+    var html = template({rows: d_zipped });
+
+    $("table.graph tbody").html(html);
   };
 
   var dragstarted = function(d) {
