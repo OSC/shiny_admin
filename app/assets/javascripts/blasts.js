@@ -24,14 +24,18 @@ function genfdgraph(svg, graph){
     // select new node
     selected_node.classed("selected", true);
 
-    // convert separate arrays into 1 array of objects
-    d_zipped = _.zipWith(d.GOaccessions, d.GOdescriptions, d.GOnames, function(accession, description, name){
-      return {
-        accession: accession,
-        description: description,
-        name: name
-      };
-    });
+    // GOaccessions, GOdescriptions, GOnames are empty: "" or: | delimited strings
+    d_zipped = [];
+    if(d.GOaccessions != "" && d.GOdescriptions != "" && d.GOnames != ""){
+      // convert separate arrays into 1 array of objects
+      d_zipped = _.zipWith(d.GOaccessions.split("|"), d.GOdescriptions.split("|"), d.GOnames.split("|"), function(accession, description, name){
+        return {
+          accession: accession,
+          description: description,
+          name: name
+        };
+      });
+    }
 
     // render table rows
     render_table_template({rows: d_zipped, id: d.id, gene: d.gene_symbol });
