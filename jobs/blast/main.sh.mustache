@@ -17,7 +17,8 @@ export BLASTDB=/users/PAS0328/osu8697/website
 
 # move files to $TMPDIR
 cd $PBS_O_WORKDIR
-cp -t $TMPDIR alignment_toolbox.py cudalign query2tree.py
+cp -t $TMPDIR alignment_toolbox.py cudalign query2tree.py /users/PAS0328/osu8697/website/gene_symbols.txt /users/PAS0328/osu8697/website/GO_terms.txt
+
 cd $TMPDIR
 
 # ensure that cudalign is accessible in the path for execution
