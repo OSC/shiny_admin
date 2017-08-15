@@ -10,6 +10,8 @@
 
   <%= javascript_include_tag "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js" %>
   <%= javascript_include_tag "https://cdnjs.cloudflare.com/ajax/libs/d3/4.9.1/d3.min.js" %>
+  <%= javascript_include_tag "https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js" %>
+  <%= javascript_include_tag "https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.10/handlebars.min.js" %>
   <%= javascript_include_tag "application" %>
   <%= csrf_meta_tags %>
 </head>
@@ -86,29 +88,14 @@
 
 </div><!-- /.container -->
 
-<footer class="footer navbar-fixed-bottom" style="background-color: white; border-top: 1px solid grey;">
+<footer class="footer navbar-bottom" style="background-color: white; border-top: 1px solid grey;">
   <div class="container">
     <div class="row">
-      <div class="col-md-9 col-sm-9">
-        <h5>Data loaded <span id="loaded_at"></span> <small>(Reload the browser to see updated data)</small></h5>
-      </div>
-      <div class="col-md-3 col-sm-3">
+      <div class="col-md-offset-9 col-md-3 col-sm-3">
         <h5 id="app_version" class="pull-right">Version: <%= ENV['APP_VERSION'] %></h5>
       </div>
     </div>
   </div>
 </footer>
-
-<script>
-(function(){
-  var loaded_at = moment(),
-  update_loaded_at = function(){
-    $('#loaded_at').text(loaded_at.fromNow());
-  }
-
-  setInterval(update_loaded_at, 60);
-})();
-</script>
-
 </body>
 </html>

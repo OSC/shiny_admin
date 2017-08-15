@@ -4,20 +4,60 @@ function genfdgraph(svg, graph){
       width = svg._groups[0][0].scrollWidth,
       height = svg._groups[0][0].scrollHeight;
 
+  var render_table_template = (function(){
+    var source = $("#graph-table-template").html();
+    var template = Handlebars.compile(source);
+
+    return function(context){
+      var html = template(context);
+      $("#graph-table-wrapper").html(html);
+    };
+  })();
+
+  render_table_template({rows: []});
+
+
+  var updateSelectedNode = function(selected_node, all_nodes, d){
+    // deselect previous selected nodes
+    all_nodes.classed("selected", false);
+
+    // select new node
+    selected_node.classed("selected", true);
+
+    // GOaccessions, GOdescriptions, GOnames are empty: "" or: | delimited strings
+    d_zipped = [];
+    if(d.GOaccessions != "" && d.GOdescriptions != "" && d.GOnames != ""){
+      // convert separate arrays into 1 array of objects
+      d_zipped = _.zipWith(d.GOaccessions.split("|"), d.GOdescriptions.split("|"), d.GOnames.split("|"), function(accession, description, name){
+        return {
+          accession: accession,
+          description: description,
+          name: name
+        };
+      });
+    }
+
+    // render table rows
+    render_table_template({rows: d_zipped, id: d.id, gene: d.gene_symbol });
+  };
+
   var dragstarted = function(d) {
     if (!d3.event.active) simulation.alphaTarget(0.3).restart();
     d.fx = d.x;
     d.fy = d.y;
-  }
+
+    updateSelectedNode(d3.select(this), node, d);
+  };
+
   var dragged = function(d) {
     d.fx = d3.event.x;
     d.fy = d3.event.y;
-  }
+  };
   var dragended = function(d) {
     if (!d3.event.active) simulation.alphaTarget(0);
     d.fx = null;
     d.fy = null;
-  }
+  };
 
   //update display
   svg.selectAll().remove();
@@ -34,6 +74,7 @@ function genfdgraph(svg, graph){
       .append("line")
       .attr("stroke-width", function(d) { return Math.sqrt(d.weight/100); });
 
+
   var node = svg.append("g")
       .attr("class", "nodes")
       .selectAll("circle")
@@ -41,8 +82,13 @@ function genfdgraph(svg, graph){
       .enter()
       .append("circle")
       .attr("r", 10)
-      .style("fill-opacity", .5)
+      .style("fill-opacity", function(d){
+        return d.GOnames == "" ? 0.5 : 1.0;
+      })
       .attr("fill", d3.rgb('#ff8282'))//function(d) { return color(d.group); })
+      .on("click", function(d){
+        updateSelectedNode(d3.select(this), node, d);
+      })
       .call(d3.drag()
         .on("start", dragstarted)
         .on("drag", dragged)

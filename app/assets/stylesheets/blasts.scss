@@ -18,6 +18,10 @@ svg.graph {
     stroke-width: 1.5px;
   }
 
+  .nodes circle.selected {
+    stroke: #000;
+  }
+
   .labels text {
     pointer-events: none;
     font: 10px sans-serif;

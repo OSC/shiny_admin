@@ -33,8 +33,36 @@
 
 <% if ! @blast.graph.nil? %>
   <svg class="graph" width="100%" height="500"></svg>
+  <div id="graph-table-wrapper"></div>
+
+<script id="graph-table-template" type="text/x-handlebars-template">
+  <h4>{{id}} {{#if gene}} - {{gene}}{{/if}}</h2>
+  <table class="graph table table-condensed table-striped">
+    <thead>
+      <tr>
+        <th>GO Accession</th>
+        <th>GO Name</th>
+        <th>GO Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#rows}}
+        <tr>
+          <td>{{accession}}</td>
+          <td>{{name}}</td>
+          <td>{{description}}</td>
+        </tr>
+      {{/rows}}
+    </tbody>
+  </table>
+  {{^rows}}
+    <div class="alert alert-warning">Select a node with GO data to see it in this table</div>
+  {{/rows}}
+  <hr>
+</script>
+
   <script>
-  genfdgraph(d3.select('svg'), <%=raw @blast.graph.to_json %>);
+  genfdgraph(d3.select('svg.graph'), <%=raw @blast.graph.to_json %>);
   </script>
   <p>
     <strong>Graph Data:</strong>
