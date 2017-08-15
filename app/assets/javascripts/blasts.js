@@ -82,7 +82,9 @@ function genfdgraph(svg, graph){
       .enter()
       .append("circle")
       .attr("r", 10)
-      .style("fill-opacity", .5)
+      .style("fill-opacity", function(d){
+        return d.GOnames == "" ? 0.5 : 1.0;
+      })
       .attr("fill", d3.rgb('#ff8282'))//function(d) { return color(d.group); })
       .on("click", function(d){
         updateSelectedNode(d3.select(this), node, d);
