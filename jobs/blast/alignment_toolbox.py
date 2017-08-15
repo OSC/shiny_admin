@@ -67,10 +67,29 @@ def hier2Dict(gff3_file):
 				elif line[0] == '#':
 					break;
 			hier[key] = trans;					# Adds gene and transcripts to dictionary
-	print line;
+	#print line;
 	return hier;
 
-# create fasta file
+# mart2dict loads information into a dictionary from a mart export file
+def mart2Dict(mart_file,delim):
+	martDict = dict()
+	fin = open(mart_file)
+	line = fin.readline();
+	line = line[:-1];
+	line_vector = line.split(delim);
+	past='';
+	while line != '':
+		if line_vector[0] == past:
+			martDict[line_vector[0]] = martDict[line_vector[0]]+[line_vector[1:]];
+		else:
+			martDict[line_vector[0]] = [line_vector[1:]];
+		past = line_vector[0];
+		line = fin.readline();
+		line = line[:-1];
+		line_vector = line.split(delim);
+	return martDict;
+
+# gen_fasta create fasta file
 def gen_fasta(gene_file,pseudogene_file,gene_names,fasta_output):
 	genes = fasta2Dict(gene_file);
 	psgenes = fasta2Dict(pseudogene_file);
@@ -93,7 +112,7 @@ def gen_fasta(gene_file,pseudogene_file,gene_names,fasta_output):
 		else:
 			fout.write(psgenes[name[0:name.find('.')]]+'\n');
 
-# Build an adjacency list from file O(2n)
+# Build an adjacency list from edge file (e.g. biomart homology) O(2n)
 def build_adj_list(edge_file, delim, directed):
 	# Importing gene names
 	import csv;
@@ -266,13 +285,13 @@ def pseudogene_gfam_alignment(cons_gene_file, gene_full_file, gene_transcript_fi
 	gene_hier_dict = get_latest(hier2Dict(hier_file));
 	print 'finished importing files: '+str(time.time()-beg)
 	os.system('mkdir tmp'+str(par_num));
-	os.system('cp /users/PAS0328/osu8697/recomb-2017/masa-cudalign/cudalign $TMPDIR');		# ************Testing**************
+	# os.system('cp ~/recomb-2017/masa-cudalign/cudalign $TMPDIR');		# ************Testing**************
 	fout = open('tmp'+str(par_num)+'/seq'+str(1)+'.fa','w')
 	#fout = open('seq1.fa','w')
 	fout.write('>'+psgene_dict.keys()[pg_st]+'\n')
 	fout.write(psgene_dict[psgene_dict.keys()[pg_st]]+'\n')
 	fout.close();
-	status_file = open('status_'+str(pg_st)+'.txt');
+	status_file = open('status_'+str(pg_st)+'.txt','w');
 	scores = np.zeros((len(cons_gene_list),1));
 	if type == 'processed':
 		#align to associated transcripts and return best align for each gene
@@ -294,8 +313,12 @@ def pseudogene_gfam_alignment(cons_gene_file, gene_full_file, gene_transcript_fi
 				gene_scores[j-1] = max(trans_scores);
 				j = j + 1;
 			scores[i] = max(gene_scores);
-			if i%1000 == 0:
+			if i%100 == 0:
 				status_file.write(str(i)+': '+str(time.time()-beg)+'\n');
+				status_file.close();
+				os.system('rm $HOME/status_files/status_'+str(pg_st)+'.txt');
+				os.system('cp status_'+str(pg_st)+'.txt $HOME/status_files');
+				status_file = open('status_'+str(pg_st)+'.txt','a');
 			i = i + 1;
 	elif type == 'unprocessed':
 		i = 0;
@@ -350,7 +373,7 @@ def pseudogene_gfam_alignment(cons_gene_file, gene_full_file, gene_transcript_fi
 	status_file.write(str(time.time() - beg));
 	status_file.close();
 	np.savetxt('scores'+str(pg_st)+'.csv',scores,delimiter=",");
-	os.system('mv scores'+str(pg_st)+'.csv $PBS_O_WORKDIR');
+	os.system('mv scores'+str(pg_st)+'.csv $PBS_O_WORKDIR/pseudo_scores');
 
 # alignMatrix_pw  uses the Biopython pairwise alignment algorithm to align each possible pair of sequences
 # within a dictionary of sequences. This code is easily parrallelizable but is slow
@@ -372,7 +395,8 @@ def cudalign(seqs, par_num):
 		seq_num1 = seqs[0]
 		seq_num2 = seqs[1]
 		import os
-		os.system('cudalign --stage-1 --verbose=0 --work-dir=tmp'+str(par_num)+'/work.tmp'+str(seq_num1)+'-'+str(seq_num2)+' tmp'+str(par_num)+'/seq'+str(seq_num1)+'.fa tmp'+str(par_num)+'/seq'+str(seq_num2)+'.fa')
+		while not os.path.exists('tmp'+str(par_num)+'/work.tmp'+str(seq_num1)+'-'+str(seq_num2)+'/statistics_01.00'):		#New untested
+			os.system('./cudalign --stage-1 --verbose=0 --work-dir=tmp'+str(par_num)+'/work.tmp'+str(seq_num1)+'-'+str(seq_num2)+' tmp'+str(par_num)+'/seq'+str(seq_num1)+'.fa tmp'+str(par_num)+'/seq'+str(seq_num2)+'.fa')
 		fin = open('tmp'+str(par_num)+'/work.tmp'+str(seq_num1)+'-'+str(seq_num2)+'/statistics_01.00')
 		line = fin.readline()
 		while line[3:14]!='Best Score:' and line != '':
@@ -451,6 +475,60 @@ def loadAlignMatrix(file):
 		aMatrix[i,:] = [float(j) for j in row];
 	return aMatrix
 
+# addGOfeats2adjmat loads an adjacency matrix from file then adds GO terms and gene symbols exports networkx graph
+def addGOfeats2adjmat(adjmat,gnames,gene_symbol_file,GO_term_file,tree):
+	import numpy as np
+	import networkx as nx
+	go_terms = mart2Dict(GO_term_file,',');
+	gene_sym = mart2Dict(gene_symbol_file,',');
+	#adjmat = loadAlignMatrix(adjmat_file);
+	#fin = open(adjmat_file,'rb');
+	#gnames = fin.readline();
+	#fin.close();
+	#gnames = gnames[1:-1];
+	#gnames = gnames.split(',');
+	G = nx.from_numpy_matrix(adjmat*-1);
+	for i in range(len(G)):
+		#G.node[i]['gencodeID'] = gnames[i];
+		if gnames[i][:gnames[i].find('.')] in gene_sym.keys():
+			if len(gene_sym[gnames[i][:gnames[i].find('.')]]) > 0:
+				G.node[i]['gene_symbol'] = gene_sym[gnames[i][:gnames[i].find('.')]][0][0];
+		else:
+			G.node[i]['gene_symbol'] = '';
+		if gnames[i][:gnames[i].find('.')] in go_terms.keys():
+			if len(go_terms[gnames[i][:gnames[i].find('.')]]) > 0:
+				for term in go_terms[gnames[i][:gnames[i].find('.')]]:
+					if 'GOaccessions' in G.node[i]:
+						'''
+						G.node[i]['GOaccessions'] = G.node[i]['GOaccessions']+[term[0]];
+						G.node[i]['GOnames'] = G.node[i]['GOnames']+[term[1]];
+						G.node[i]['GOdescriptions'] = G.node[i]['GOdescriptions']+[term[2]];
+						'''
+						G.node[i]['GOaccessions'] = G.node[i]['GOaccessions']+'|'+term[0];
+						G.node[i]['GOnames'] = G.node[i]['GOnames']+'|'+term[1];
+						G.node[i]['GOdescriptions'] = G.node[i]['GOdescriptions']+'|'+term[2];
+					else:
+						G.node[i]['GOaccessions'] = term[0];
+						G.node[i]['GOnames'] = term[1];
+						G.node[i]['GOdescriptions'] = term[2];
+		else:
+			G.node[i]['GOaccessions'] = '';
+			G.node[i]['GOnames'] = '';
+			G.node[i]['GOdescriptions'] = '';
+	if tree == True:
+		i = 0;
+		conv_dict = dict();
+		for name in gnames:
+			conv_dict[i] = name[:name.find('.')];
+			i = i+1;
+		H = nx.relabel_nodes(G,conv_dict);
+		T = nx.minimum_spanning_tree(H);
+		for u,v,d in T.edges(data=True):
+			d['weight']*=-1;
+		return T;
+	else:
+		return G;
+
 # Blast searches !!!!!!
 def blastsearch(sequence, name):
 	import os
@@ -475,7 +553,7 @@ def blastsearch(sequence, name):
 	else:
 		print 'Error in blastsearch: could not read result of negative from result file';
 
-def generate_tree(search_sequence, search_name):
+def generate_tree(search_sequence, search_name, addGOterms):
 	import numpy as np
 	import networkx as nx
 	from networkx.readwrite import json_graph
@@ -483,7 +561,7 @@ def generate_tree(search_sequence, search_name):
 	#search gene_families for the gene returned by blastsearch
 	closest_gene = blastsearch(search_sequence, search_name);
 	# Find gene family with gene
-	for num in range(1,3282):
+	for num in range(1,3283):
 		try:
 			fin = open('/users/PAS0328/osu8697/recomb-2017/pgAmats/pgAmat'+str(num)+'.csv','rb');
 			line = fin.readline()
@@ -495,20 +573,24 @@ def generate_tree(search_sequence, search_name):
 			x=1;
 	gdict = fasta2Dict('/users/PAS0328/osu8697/recomb-2017/pg_fams/pgfam'+str(num)+'.fasta');
 	gdict[search_name] = search_sequence;
-	alignmat = alignMatrix_cuda(gdict, 1)*-1;
+	alignmat = alignMatrix_cuda(gdict, 1);
 	print alignmat;
-	#generate maximum spanning tree
-	G = nx.from_numpy_matrix(alignmat);
-	print G.nodes()
-	conv_dict = dict();
-	i = 0;
-	for name in gdict.keys():
-		conv_dict[i] = name;
-		i = i+1;
-	H = nx.relabel_nodes(G,conv_dict);
-	T = nx.minimum_spanning_tree(H);
-	for u,v,d in T.edges(data=True):
-		d['weight']*=-1;
+	if addGOterms:
+		T = addGOfeats2adjmat(alignmat,gdict.keys(),'gene_symbols.txt','GO_terms.txt',True);
+	else:
+		#generate maximum spanning tree
+		alignmat = alignmat*-1;
+		G = nx.from_numpy_matrix(alignmat);
+		print G.nodes()
+		conv_dict = dict();
+		i = 0;
+		for name in gdict.keys():
+			conv_dict[i] = name;
+			i = i+1;
+		H = nx.relabel_nodes(G,conv_dict);
+		T = nx.minimum_spanning_tree(H);
+		for u,v,d in T.edges(data=True):
+			d['weight']*=-1;
 	outdat = json_graph.node_link_data(T);
 	fout = open('outgraph.json','w');
 	json.dump(outdat,fout);
