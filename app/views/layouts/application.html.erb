@@ -40,7 +40,7 @@
       <div class="collapse navbar-collapse navbar-responsive-collapse">
         <ul class="nav navbar-nav">
           <li>
-            <%= link_to '<span class="glyphicon glyphicon-plus"></span> Add Simulation'.html_safe, new_blast_path %>
+            <%= link_to '<span class="glyphicon glyphicon-plus"></span> New BLAST Search'.html_safe, new_blast_path %>
           </li>
         </ul>
         <ul class="nav navbar-nav navbar-right">
@@ -53,7 +53,7 @@
             <p class="navbar-text">Logged in as <%= OodSupport::User.new.name %></p>
           </li>
           <li>
-            <%= link_to "My Simulations", root_path %>
+            <%= link_to "BLAST Searches", root_path %>
           </li>
         </ul>
       </div><!-- /.navbar-collapse -->
