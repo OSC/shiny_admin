@@ -1,4 +1,6 @@
 Rails.application.routes.draw do
+  get 'about' => 'pages#about'
+
   resources :blasts do
     member do
       put 'submit'
