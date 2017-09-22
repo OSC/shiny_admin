@@ -1,8 +1,8 @@
 ## PseudoFuN (Pseudogene Functional Network)
 
-PseudoFUN is a computational tool for studying potential functions of
+PseudoFuN is a computational tool for studying potential functions of
 pseudogenes in the context of evolution and diseases, developed by the Zhang Lab
-of Computational Genomics and Proteomics at OSU BMI. PseudoFUN is made of
+of Computational Genomics and Proteomics at OSU BMI. PseudoFuN is made of
 
 1. a comprehensive similarity network of known pseudogenes and genes,
 2. GO functional annotations of the nodes,
@@ -32,9 +32,4 @@ potentials. Submitted. 2017.
 
 - Travis Johnson MS (travis.johnson@osumc.edu)
 - Yan Zhang PhD (yan.zhang@osumc.edu)
-
-
-
-
-
 
