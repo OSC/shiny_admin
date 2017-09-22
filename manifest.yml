@@ -1,10 +1,10 @@
 ---
 name: PseudoFuN
 description: |-
-  PseudoFUN is a computational tool for studying potential functions of
+  PseudoFuN is a computational tool for studying potential functions of
   pseudogenes in the context of evolution and diseases, developed by the
   Zhang Lab of Computational Genomics and Proteomics at OSU BMI.
-  PseudoFUN is made of (1) a comprehensive similarity network of known pseudogenes
+  PseudoFuN is made of (1) a comprehensive similarity network of known pseudogenes
   and genes, (2) GO functional annotations of the nodes, (3) as well a sequence
   query tool that allows the querying of sequences (e.g. novel pseudogene
   sequence) against the network database.
