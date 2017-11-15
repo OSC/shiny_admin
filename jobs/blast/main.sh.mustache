@@ -12,12 +12,15 @@ echo "job running: $PBS_JOBID"
 module load python/2.7
 module load blast
 
-# location of gfams_original_db.nhr, gfams_original_db.nin, and gfams_original_db.nsq
-export BLASTDB=/users/PAS0328/osu8697/website
+# location of merged_formmated.fa.nhr, merged_formmated.fa.nin, and merged_formmated.fa.nsq
+export BLASTDB=/users/PAS1294/osu8658/website
+export PSEUDOGENESDB=/users/PAS1294/osu8658/website
+
+# FIXME: should this be separate from BLASTDB
 
 # move files to $TMPDIR
 cd $PBS_O_WORKDIR
-cp -t $TMPDIR alignment_toolbox.py cudalign query2tree.py /users/PAS0328/osu8697/website/gene_symbols.txt /users/PAS0328/osu8697/website/GO_terms.txt
+cp -t $TMPDIR alignment_toolbox.py cudalign query2tree.py $PSEUDOGENESDB/gene_symbols.txt $PSEUDOGENESDB/GO_terms.txt
 
 cd $TMPDIR
 

@@ -203,7 +203,7 @@ def get_latest(fasta_dict):
 # Returns the intersection of two lists
 def intersection(a,b):
 	return list(set(a) & set(b));
-
+'''
 # Loading and processing gfams to find consensus sequences
 def get_cons_genes(edge_file, fasta_file, delim, directed, par_num, gfam_st, gfam_sp):
 	import networkx as nx
@@ -260,6 +260,7 @@ def get_cons_genes(edge_file, fasta_file, delim, directed, par_num, gfam_st, gfa
 			print str(i)+','+tmp_seq_dict.keys()[ind[len(ind)-1]]+','+tmp_seq_dict.keys()[ind[len(ind)-2]] 				#testing
 			ALout.write(str(i)+','+str(tmp_seq_dict.keys()[ind[len(ind)-1]])+','+str(tmp_seq_dict.keys()[ind[len(ind)-2]])+'\n');
 		i=i+1;
+'''
 
 def base_names(data_dict):
 	for key in data_dict.keys():
@@ -267,7 +268,7 @@ def base_names(data_dict):
 	return data_dict;
 
 # Calculating highest alignment scores between pseudogenes and gfams
-def pseudogene_gfam_alignment(cons_gene_file, gene_full_file, gene_transcript_file, psgene_file, hier_file, type, par_num, pg_st, pg_sp):
+def pseudogene_gfam_alignment(cons_gene_file, gene_full_file, gene_transcript_file, psgene_file, hier_file, type, par_num, pg_st, pg_sp, offset):
 	import csv
 	import os
 	import time
@@ -329,7 +330,7 @@ def pseudogene_gfam_alignment(cons_gene_file, gene_full_file, gene_transcript_fi
 				fout = open('tmp'+str(par_num)+'/seq'+str(2)+'.fa','w')
 				#fout = open('seq2.fa','w')
 				fout.write('>'+cons_gene_list[i][j]+'\n')
-				fout.write(gene_full_dict[gene_hier_dict[cons_gene_list[i][j]][k]]+'\n')
+				fout.write(gene_full_dict[cons_gene_list[i][j]]+'\n')
 				fout.close();
 				gene_scores[j-1] = cudalign((1,2),par_num);
 				j = j + 1;
@@ -360,7 +361,7 @@ def pseudogene_gfam_alignment(cons_gene_file, gene_full_file, gene_transcript_fi
 				fout = open('tmp'+str(par_num)+'/seq'+str(2)+'.fa','w')
 				#fout = open('seq2.fa','w')
 				fout.write('>'+cons_gene_list[i][j]+'\n')
-				fout.write(gene_full_dict[gene_hier_dict[cons_gene_list[i][j]][k]]+'\n')
+				fout.write(gene_full_dict[cons_gene_list[i][j]]+'\n')			# Fixing*********
 				fout.close();
 				gene_scores[j-1] = cudalign((1,2),par_num);
 				j = j + 1;
@@ -372,8 +373,8 @@ def pseudogene_gfam_alignment(cons_gene_file, gene_full_file, gene_transcript_fi
 		return
 	status_file.write(str(time.time() - beg));
 	status_file.close();
-	np.savetxt('scores'+str(pg_st)+'.csv',scores,delimiter=",");
-	os.system('mv scores'+str(pg_st)+'.csv $PBS_O_WORKDIR/pseudo_scores');
+	np.savetxt('scores'+str(pg_st+offset)+'.csv',scores,delimiter=",");
+	os.system('mv scores'+str(pg_st+offset)+'.csv $PBS_O_WORKDIR/pseudo_scores');
 
 # alignMatrix_pw  uses the Biopython pairwise alignment algorithm to align each possible pair of sequences
 # within a dictionary of sequences. This code is easily parrallelizable but is slow
@@ -536,7 +537,7 @@ def blastsearch(sequence, name):
 	fout.write('>'+name+'\n');
 	fout.write(sequence+'\n');
 	fout.close()
-	os.system('blastn -query input.fa -db gfams_original_db -out blastsearch_results.txt');
+	os.system('blastn -query input.fa -db merged_formatted.fa -out blastsearch_results.txt -word_size 7');
 	fin = open('blastsearch_results.txt','rb');
 	line = fin.readline();
 	while '***** No hits found *****' not in line and 'Sequences producing significant alignments:' not in line:
@@ -561,9 +562,9 @@ def generate_tree(search_sequence, search_name, addGOterms):
 	#search gene_families for the gene returned by blastsearch
 	closest_gene = blastsearch(search_sequence, search_name);
 	# Find gene family with gene
-	for num in range(1,3283):
+	for num in range(1,46754):
 		try:
-			fin = open('/users/PAS0328/osu8697/recomb-2017/pgAmats/pgAmat'+str(num)+'.csv','rb');
+			fin = open('/users/PAS1294/osu8658/website/pgAmats/pgAmat'+str(num)+'.csv','rb');
 			line = fin.readline()
 			names = line.split(',');
 			fin.close()
@@ -571,7 +572,7 @@ def generate_tree(search_sequence, search_name, addGOterms):
 				break
 		except:
 			x=1;
-	gdict = fasta2Dict('/users/PAS0328/osu8697/recomb-2017/pg_fams/pgfam'+str(num)+'.fasta');
+	gdict = fasta2Dict('/users/PAS1294/osu8658/website/pg_fams/pggfam'+str(num)+'.fa');
 	gdict[search_name] = search_sequence;
 	alignmat = alignMatrix_cuda(gdict, 1);
 	print alignmat;
