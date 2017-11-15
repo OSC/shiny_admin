@@ -16,11 +16,12 @@ module load blast
 export BLASTDB=/users/PAS1294/osu8658/website
 export PSEUDOGENESDB=/users/PAS1294/osu8658/website
 
-# FIXME: should this be separate from BLASTDB
-
 # move files to $TMPDIR
 cd $PBS_O_WORKDIR
-cp -t $TMPDIR alignment_toolbox.py cudalign query2tree.py $PSEUDOGENESDB/gene_symbols.txt $PSEUDOGENESDB/GO_terms.txt
+
+# FIXME: uncomment once we can use alignement_toolbox.py outside of this
+# cp -t $TMPDIR $PSEUDOGENESDB/py_libs/alignment_toolbox.py $PSEUDOGENESDB/cudalign query2tree.py $PSEUDOGENESDB/gene_symbols.txt $PSEUDOGENESDB/GO_terms.txt
+cp -t $TMPDIR alignment_toolbox.py $PSEUDOGENESDB/cudalign query2tree.py $PSEUDOGENESDB/gene_symbols.txt $PSEUDOGENESDB/GO_terms.txt
 
 cd $TMPDIR
 
