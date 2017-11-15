@@ -4,6 +4,8 @@
 # All codes are written by Travis Johnson unless otherwise stated in function headers
 # Dependencies include NetworkX, CUDAlign, optional: BioPython
 
+import os
+
 # Update database (Still working...)
 def updateDB():
 	#awk '$9!~/processed_pseudogene/ && $9!~/unitary_pseudogene/' gencode.v25.primary_assembly_pseudogenes.annotation.gff3>gencode.v25.primary_assembly_other_pseudogenes.annotation.gff3
@@ -554,7 +556,7 @@ def blastsearch(sequence, name):
 	else:
 		print 'Error in blastsearch: could not read result of negative from result file';
 
-def generate_tree(search_sequence, search_name, addGOterms):
+def generate_tree(search_sequence, search_name, addGOterms, pseudogenes_db_path):
 	import numpy as np
 	import networkx as nx
 	from networkx.readwrite import json_graph
@@ -564,7 +566,7 @@ def generate_tree(search_sequence, search_name, addGOterms):
 	# Find gene family with gene
 	for num in range(1,46754):
 		try:
-			fin = open('/users/PAS1294/osu8658/website/pgAmats/pgAmat'+str(num)+'.csv','rb');
+			fin = open(os.path.join(pseudogenes_db_path, 'pgAmats', 'pgAmat%i.csv' % num), 'rb');
 			line = fin.readline()
 			names = line.split(',');
 			fin.close()
@@ -572,7 +574,7 @@ def generate_tree(search_sequence, search_name, addGOterms):
 				break
 		except:
 			x=1;
-	gdict = fasta2Dict('/users/PAS1294/osu8658/website/pg_fams/pggfam'+str(num)+'.fa');
+	gdict = fasta2Dict(os.path.join(pseudogenes_db_path, 'pg_fams', 'pggfam%i.fa' % num))
 	gdict[search_name] = search_sequence;
 	alignmat = alignMatrix_cuda(gdict, 1);
 	print alignmat;

@@ -29,7 +29,7 @@ cd $TMPDIR
 export PATH=$TMPDIR:$PATH
 
 # run query
-python query2tree.py "{{{ name }}}" {{{ sequence }}}
+python query2tree.py "{{{ name }}}" {{{ sequence }}} $PSEUDOGENESDB
 
 # copy result
 cp outgraph.json $PBS_O_WORKDIR
