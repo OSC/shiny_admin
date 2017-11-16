@@ -1,8 +1,8 @@
 function genfdgraph(svg, graph){
   var simulation,
       color = d3.scaleOrdinal(d3.schemeCategory20),
-      width = svg._groups[0][0].scrollWidth,
-      height = svg._groups[0][0].scrollHeight;
+      width = 500, // svg.viewBox.baseVal.width, // svg._groups[0][0].scrollWidth,
+      height = 500; // svg.viewBox.baseVal.height; // svg._groups[0][0].scrollHeight;
 
   var render_table_template = (function(){
     var source = $("#graph-table-template").html();
