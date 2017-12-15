@@ -411,13 +411,12 @@ def cudalign(seqs, par_num):
 
 # alignMatrix_cuda calls the cudalign function to produce a matrix of the alignment scores for every
 # combination of pairwise alignments for a dictionary of sequences, fast but not easily parrallelizable
-def alignMatrix_cuda(sequence_dict, par_num):
+def alignMatrix_cuda(sequence_dict, par_num, col):
 	# Loading libraries
 	import numpy as np
 	import os
 	#Defining input params
 	dim = len(sequence_dict)
-	aMatrix = np.zeros([dim,dim])
 	os.system('mkdir tmp'+str(par_num))
 	for i in range(0,dim):
 		fout = open('tmp'+str(par_num)+'/seq'+str(i)+'.fa','w')
@@ -425,11 +424,17 @@ def alignMatrix_cuda(sequence_dict, par_num):
 		fout.write(sequence_dict[sequence_dict.keys()[i]]+'\n')
 	fout.close()
 	tup = []
-	for i in range(0,dim):
-		for j in range(0,i):
-			tup.append([i,j])
-			aMatrix[i,j] = cudalign((i,j),par_num)
-			aMatrix[j,i] = aMatrix[i,j]
+	if col == 0:
+		aMatrix = np.zeros([dim,dim])
+		for i in range(0,dim):
+			for j in range(0,i):
+				tup.append([i,j])
+				aMatrix[i,j] = cudalign((i,j),par_num)
+				aMatrix[j,i] = aMatrix[i,j]
+	else:
+		aMatrix = np.zeros([dim,1])
+		for i in range(0,dim-1):
+			aMatrix[i,0] = cudalign((i,col-1),par_num)
 	os.system('rm -rf tmp'+str(par_num))
 	return aMatrix
 
@@ -459,7 +464,7 @@ def alignMatrixMulti(start,stop,infile_prefix,outfile_prefix,par_num):
 		if os.path.isfile(infile_prefix+str(i)+'.txt'):
 			if os.stat(infile_prefix+str(i)+'.txt').st_size > 0:
 				f = fasta2Dict(infile_prefix+str(i)+'.txt')
-				A = alignMatrix_cuda(f,par_num)
+				A = alignMatrix_cuda(f,par_num,0)
 				alignMatrix2file(A,f.keys(),outfile_prefix+str(i)+'.csv')
 
 # loadAlignMatrix loads alignment matrix files into a numpy array
@@ -479,7 +484,7 @@ def loadAlignMatrix(file):
 	return aMatrix
 
 # addGOfeats2adjmat loads an adjacency matrix from file then adds GO terms and gene symbols exports networkx graph
-def addGOfeats2adjmat(adjmat,gnames,gene_symbol_file,GO_term_file,tree):
+def addGOfeats2adjmat(adjmat,gnames_orig,gene_symbol_file,GO_term_file,tree):
 	import numpy as np
 	import networkx as nx
 	go_terms = mart2Dict(GO_term_file,',');
@@ -491,16 +496,25 @@ def addGOfeats2adjmat(adjmat,gnames,gene_symbol_file,GO_term_file,tree):
 	#gnames = gnames[1:-1];
 	#gnames = gnames.split(',');
 	G = nx.from_numpy_matrix(adjmat*-1);
+	# creating shorter names
+	gnames = [];
+	for g in gnames_orig:
+		if g.find('.') > -1:
+			gnames.append(g[:g.find('.')]);
+		else:
+			gnames.append(g);
+	print(gnames_orig)
+	print(gnames)
 	for i in range(len(G)):
 		#G.node[i]['gencodeID'] = gnames[i];
-		if gnames[i][:gnames[i].find('.')] in gene_sym.keys():
-			if len(gene_sym[gnames[i][:gnames[i].find('.')]]) > 0:
-				G.node[i]['gene_symbol'] = gene_sym[gnames[i][:gnames[i].find('.')]][0][0];
+		if gnames[i] in gene_sym.keys():
+			if len(gene_sym[gnames[i]]) > 0:
+				G.node[i]['gene_symbol'] = gene_sym[gnames[i]][0][0];
 		else:
 			G.node[i]['gene_symbol'] = '';
-		if gnames[i][:gnames[i].find('.')] in go_terms.keys():
-			if len(go_terms[gnames[i][:gnames[i].find('.')]]) > 0:
-				for term in go_terms[gnames[i][:gnames[i].find('.')]]:
+		if gnames[i] in go_terms.keys():
+			if len(go_terms[gnames[i]]) > 0:
+				for term in go_terms[gnames[i]]:
 					if 'GOaccessions' in G.node[i]:
 						'''
 						G.node[i]['GOaccessions'] = G.node[i]['GOaccessions']+[term[0]];
@@ -521,8 +535,8 @@ def addGOfeats2adjmat(adjmat,gnames,gene_symbol_file,GO_term_file,tree):
 	if tree == True:
 		i = 0;
 		conv_dict = dict();
-		for name in gnames:
-			conv_dict[i] = name[:name.find('.')];
+		for name in gnames_orig:
+			conv_dict[i] = name;
 			i = i+1;
 		H = nx.relabel_nodes(G,conv_dict);
 		T = nx.minimum_spanning_tree(H);
@@ -564,10 +578,11 @@ def generate_tree(search_sequence, search_name, addGOterms, pseudogenes_db_path)
 	#search gene_families for the gene returned by blastsearch
 	closest_gene = blastsearch(search_sequence, search_name);
 	# Find gene family with gene
-	for num in range(1,46754):
+	for num in range(1,46766):
 		try:
 			fin = open(os.path.join(pseudogenes_db_path, 'pgAmats', 'pgAmat%i.csv' % num), 'rb');
 			line = fin.readline()
+			line = line[0:len(line)-1];
 			names = line.split(',');
 			fin.close()
 			if closest_gene in names:
@@ -576,15 +591,22 @@ def generate_tree(search_sequence, search_name, addGOterms, pseudogenes_db_path)
 			x=1;
 	gdict = fasta2Dict(os.path.join(pseudogenes_db_path, 'pg_fams', 'pggfam%i.fa' % num))
 	gdict[search_name] = search_sequence;
-	alignmat = alignMatrix_cuda(gdict, 1);
-	print alignmat;
+	alignmat_tmp = alignMatrix_cuda(gdict, 1, len(gdict));
+	alignmat = np.zeros([len(gdict),len(gdict)])
+	alignmat[0:len(gdict)-1,0:len(gdict)-1] = loadAlignMatrix(os.path.join(pseudogenes_db_path, 'pgAmats', 'pgAmat%i.csv' % num));
+	# print alignmat
+	# print alignmat_tmp
+	alignmat[:,len(alignmat)-1] = alignmat_tmp[:,0];
+	alignmat[len(alignmat)-1,:] = np.transpose(alignmat_tmp[:,0]);
+	# print alignmat;
+	# print gdict.keys()
 	if addGOterms:
 		T = addGOfeats2adjmat(alignmat,gdict.keys(),'gene_symbols.txt','GO_terms.txt',True);
 	else:
 		#generate maximum spanning tree
 		alignmat = alignmat*-1;
 		G = nx.from_numpy_matrix(alignmat);
-		print G.nodes()
+		# print G.nodes()
 		conv_dict = dict();
 		i = 0;
 		for name in gdict.keys():
