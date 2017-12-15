@@ -8,5 +8,6 @@ description: |-
   and genes, (2) GO functional annotations of the nodes, (3) as well a sequence
   query tool that allows the querying of sequences (e.g. novel pseudogene
   sequence) against the network database.
-category: Zhang Lab of Computational Genomics and Proteomics
+category: Gateway Apps
+subcategory: Biomedical Informatics
 icon: fa://search
