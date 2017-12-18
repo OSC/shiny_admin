@@ -22,6 +22,7 @@
 # files used for deployment should not be versioned
 /public/assets
 /.env.local
+/.env.production
 
 # awesim-branding uses separately versioned wiki repositories
 # do not include those in the app repo
