@@ -14,11 +14,7 @@ class Blast < ActiveRecord::Base
   end
 
   def job_name
-    if ENV['OOD_PORTAL'] && ENV['APP_TOKEN']
-      "#{ENV['OOD_PORTAL']}/#{ENV['APP_TOKEN']}"
-    else
-      "osubmi-pseudofun"
-    end
+    Configuration.app_token
   end
 
   # get all blasts that have active jobs
