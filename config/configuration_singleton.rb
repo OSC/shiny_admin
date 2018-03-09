@@ -68,7 +68,7 @@ class ConfigurationSingleton
   def app_token
     if ENV['APP_TOKEN']
       ENV['APP_TOKEN']
-    elif rails_env == "production"
+    elsif rails_env == "production"
       "sys/#{ENV['OOD_PORTAL'] || 'ondemand'}/pseudofun"
     else
       "#{rails_env}/pseudofun"
