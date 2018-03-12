@@ -7,7 +7,13 @@ class Blast < ActiveRecord::Base
   # add accessors: [ :attr1, :attr2 ] etc. when you want to add getters and
   # setters to add new attributes stored in the JSON store
   # don't remove attributes from this list going forward! only deprecate
-  store :job_attrs, coder: JSON, accessors: [:account, :context]
+  store :job_attrs, coder: JSON, accessors: [:account, :context, :database]
+
+  DB_OPTIONS = %w(blastDB CUDAlign54 CUDAlign135 CUDAlign198)
+
+  def database
+    job_attrs[:database] || "blastDB"
+  end
 
   def context
     job_attrs[:context] || :sequence
