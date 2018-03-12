@@ -42,6 +42,9 @@
           <li>
             <%= link_to '<span class="glyphicon glyphicon-plus"></span> New Sequence Query'.html_safe, new_sequence_path %>
           </li>
+          <li>
+            <%= link_to '<span class="glyphicon glyphicon-plus"></span> New Gene Query'.html_safe, new_gene_path %>
+          </li>
         </ul>
         <ul class="nav navbar-nav navbar-right">
           <% if OodAppkit.routes.wiki && File.exist?(File.join('wiki/Home.md')) %>

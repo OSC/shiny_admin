@@ -1,5 +1,5 @@
 <div class="page-header">
-  <h2>BLAST Searches <small>Data loaded <span id="loaded_at"></span> (Reload the browser to see updated data)</small></h2>
+  <h2>Sequence and Gene Queries <small>Data loaded <span id="loaded_at"></span> (Reload the browser to see updated data)</small></h2>
   <p>
   PseudoFuN is a computational tool for studying potential functions of
   pseudogenes in the context of evolution and diseases
@@ -22,7 +22,8 @@
 
 <div class="row">
   <div class="panel">
-    <%= link_to "New BLAST Search", new_sequence_path, :class => 'btn btn-large btn-info' %>
+    <%= link_to "New Sequence Query", new_sequence_path, :class => 'btn btn-large btn-info' %>
+    <%= link_to "New Gene Query", new_gene_path, :class => 'btn btn-large btn-info' %>
   </div>
 </div>
 
@@ -50,12 +51,21 @@
           <td><%= blast.jobids %></td>
           <td><%= status_label(blast) %></td>
           <td><%= blast.name %></td>
-          <td style="max-width: 200px; word-wrap: break-word;"><%= blast.sequence %></td>
-          <td><%= link_to 'Submit', submit_sequence_path(blast), method: :put, class: 'btn btn-success btn-sm' unless blast.submitted? %></td>
-          <td><%= link_to 'Show', sequence_path(blast), class: 'btn btn-primary btn-sm' %></td>
-          <td><%= link_to 'Edit', edit_sequence_path(blast), class: 'btn btn-default btn-sm' unless blast.submitted? %></td>
-          <td><%= link_to 'Copy', copy_sequence_path(blast), method: :put, class: 'btn btn-default btn-sm' %></td>
-          <td><%= link_to 'Destroy', sequence_path(blast), method: :delete, class: 'btn btn-danger btn-sm', data: { confirm: 'Are you sure?' } %></td>
+          <% if blast.gene? %>
+            <td style="max-width: 200px; word-wrap: break-word;">N/A</td>
+            <td><%= link_to 'Submit', submit_gene_path(blast), method: :put, class: 'btn btn-success btn-sm' unless blast.submitted? %></td>
+            <td><%= link_to 'Show', gene_path(blast), class: 'btn btn-primary btn-sm' %></td>
+            <td><%= link_to 'Edit', edit_gene_path(blast), class: 'btn btn-default btn-sm' unless blast.submitted? %></td>
+            <td><%= link_to 'Copy', copy_gene_path(blast), method: :put, class: 'btn btn-default btn-sm' %></td>
+            <td><%= link_to 'Destroy', gene_path(blast), method: :delete, class: 'btn btn-danger btn-sm', data: { confirm: 'Are you sure?' } %></td>
+          <% else %>
+            <td style="max-width: 200px; word-wrap: break-word;"><%= blast.sequence %></td>
+            <td><%= link_to 'Submit', submit_sequence_path(blast), method: :put, class: 'btn btn-success btn-sm' unless blast.submitted? %></td>
+            <td><%= link_to 'Show', sequence_path(blast), class: 'btn btn-primary btn-sm' %></td>
+            <td><%= link_to 'Edit', edit_sequence_path(blast), class: 'btn btn-default btn-sm' unless blast.submitted? %></td>
+            <td><%= link_to 'Copy', copy_sequence_path(blast), method: :put, class: 'btn btn-default btn-sm' %></td>
+            <td><%= link_to 'Destroy', sequence_path(blast), method: :delete, class: 'btn btn-danger btn-sm', data: { confirm: 'Are you sure?' } %></td>
+          <% end %>
         </tr>
     <% end %>
     </tbody>

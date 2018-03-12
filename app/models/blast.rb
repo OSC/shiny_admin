@@ -13,6 +13,10 @@ class Blast < ActiveRecord::Base
     job_attrs[:context] || :sequence
   end
 
+  def gene?
+    context.to_s.to_sym == :gene
+  end
+
   def update_status!
     blast_jobs.to_a.each(&:update_status!)
   end

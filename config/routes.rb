@@ -9,6 +9,13 @@ Rails.application.routes.draw do
     end
   end
 
+  resources :genes, except: :index do
+    member do
+      put 'submit'
+      put 'copy'
+    end
+  end
+
   root 'blasts#index'
 
   # The priority is based upon order of creation: first created -> highest priority.
