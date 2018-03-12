@@ -46,7 +46,7 @@ class Blast < ActiveRecord::Base
 
   # Make copy of workflow
   def copy
-    Blast.new(name: name, sequence: sequence)
+    Blast.new(name: name, sequence: sequence, context: context)
   end
 
   def output
