@@ -34,6 +34,7 @@
       <th>#</th>
       <th>Job ID</th>
       <th>Status</th>
+      <th>Type</th>
       <th>Name</th>
       <th>Sequence</th>
       <th class="no-sort"></th>
@@ -50,6 +51,7 @@
           <td><%= blast.id %></td>
           <td><%= blast.jobids %></td>
           <td><%= status_label(blast) %></td>
+          <td><%= blast.context.to_s.titleize %></td>
           <td><%= blast.name %></td>
           <% if blast.gene? %>
             <td style="max-width: 200px; word-wrap: break-word;">N/A</td>
