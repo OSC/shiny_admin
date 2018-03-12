@@ -1,7 +1,8 @@
 Rails.application.routes.draw do
   get 'about' => 'pages#about'
 
-  resources :blasts do
+  resources :blasts, only: :index
+  resources :sequences, except: :index do
     member do
       put 'submit'
       put 'copy'

@@ -11,5 +11,5 @@
   <hr>
 
   <%= link_to 'Back', blasts_path, class: 'btn btn-default' %>
-  <%= link_to 'Show', sequence_path(blast), class: 'btn btn-primary' unless blast.new_record? %>
+  <%= link_to 'Show', blast, class: 'btn btn-primary' unless blast.new_record? %>
 <% end %>
