@@ -1,5 +1,5 @@
 <div class="page-header">
-    <h2>Showing BLAST Search</h2>
+    <h2>Showing Sequence Query</h2>
 </div>
 
 <p>
@@ -10,6 +10,11 @@
 <p style="word-wrap: break-word">
   <strong>Sequence:</strong>
   <%= @blast.sequence %>
+</p>
+
+<p>
+  <strong>Database:</strong>
+  <%= @blast.database %>
 </p>
 
 <p>
@@ -80,4 +85,4 @@
 <% end %>
 
 <%= link_to 'Back', blasts_path, class: 'btn btn-default' %>
-<%= link_to 'Edit', edit_blast_path(@blast), class: 'btn btn-default' %>
+<%= link_to 'Edit', edit_sequence_path(@blast), class: 'btn btn-default' %>

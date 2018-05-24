@@ -2,12 +2,26 @@ class Blast < ActiveRecord::Base
   has_many :blast_jobs, dependent: :destroy
   has_machete_workflow_of :blast_jobs
 
-  validates_presence_of :name, :sequence
+  validates_presence_of :name
 
   # add accessors: [ :attr1, :attr2 ] etc. when you want to add getters and
   # setters to add new attributes stored in the JSON store
   # don't remove attributes from this list going forward! only deprecate
-  store :job_attrs, coder: JSON, accessors: [:account]
+  store :job_attrs, coder: JSON, accessors: [:account, :context, :database]
+
+  DB_OPTIONS = %w(blastDB CUDAlign54 CUDAlign135 CUDAlign198)
+
+  def database
+    job_attrs[:database] || "blastDB"
+  end
+
+  def context
+    job_attrs[:context] || :sequence
+  end
+
+  def gene?
+    context.to_s.to_sym == :gene
+  end
 
   def update_status!
     blast_jobs.to_a.each(&:update_status!)
@@ -38,7 +52,7 @@ class Blast < ActiveRecord::Base
 
   # Make copy of workflow
   def copy
-    Blast.new(name: name, sequence: sequence)
+    Blast.new(name: name, sequence: sequence, context: context)
   end
 
   def output
