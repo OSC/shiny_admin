@@ -52,3 +52,5 @@ gem 'rails_12factor', group: :production
 gem 'osc_machete_rails', '~> 1.2'
 gem 'ood_support', '~> 0.0.2'
 gem 'ood_appkit', '~> 0.3'
+gem 'font-awesome-rails'
+

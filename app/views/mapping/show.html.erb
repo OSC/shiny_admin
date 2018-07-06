@@ -1,0 +1,26 @@
+<div class="page-header">
+  <h2>View Mapping</h2>
+</div>
+
+<p>
+  <strong>User:</strong>
+  <%= @mapping.user %>
+</p>
+
+<p>
+  <strong>App:</strong>
+  <%= @mapping.app %>
+</p>
+
+<p>
+  <strong>Dataset:</strong>
+  <%= @mapping.dataset %>
+</p>
+
+<p>
+  <strong>Updated At:</strong>
+  <%= @mapping.updated_at %>
+</p>
+
+<%= link_to 'Edit', edit_mapping_path(@mapping.id), class: 'btn btn-default' %>
+<%= link_to 'Back', url_for(controller: 'mapping', action: 'index'), class: 'btn btn-info' %>

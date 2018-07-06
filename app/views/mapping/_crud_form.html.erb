@@ -1,0 +1,24 @@
+<%= bootstrap_form_for(:mapping, url: {:controller => 'mapping', :action => 'create'}) do |f| %>
+  <%= f.alert_message 'Please fix the errors below.' %>
+
+  <%= f.select :user, user_list, :include_blank => true %>
+  <%= f.select :app, app_list.map{|uri| get_app_name uri}, :include_blank => true %>
+
+  <%= f.form_group :dataset, label: { text: 'Dataset (absolute path)' } do %>
+    <% known_datasets.each do |dataset| %>
+      <%= f.radio_button :dataset, dataset, label: dataset %>
+    <% end %>
+    <%= f.radio_button :dataset, 'dataset_non_std_location', label: 'Other' %>
+    <%= f.text_field :dataset_non_std_location_value, hide_label: true, disabled: true %>
+  <% end %>
+
+  <%= f.submit 'Save', class: 'btn btn-primary' %>
+  <%= f.button 'Reset', type: :reset, class: 'btn btn-default' %>
+
+  <hr>
+
+  <%= link_to 'Back', mapping_index_path, class: 'btn btn-default' %>
+  <% if mapping and mapping.persisted? %>
+    <%= link_to 'Destroy', url_for(controller: 'mapping', action: 'destroy'), method: :delete, class: 'btn btn-danger', data: { confirm: 'Are you sure you want to delete this mapping?' } %>
+  <% end %>
+<% end %>

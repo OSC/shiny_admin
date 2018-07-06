@@ -1,2 +1,0 @@
-module BlastsHelper
-end
