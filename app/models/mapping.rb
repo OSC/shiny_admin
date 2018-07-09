@@ -2,7 +2,7 @@ require 'ood_support'
 require 'yaml/store'
 
 class Mapping < ActiveRecord::Base
-  YAML_FILE_PATH = File.join(ENV['BSIR_PROJECT_SPACE'], 'mappings.yaml')
+  YAML_FILE_PATH = File.join(ENV['APP_PROJECT_SPACE'], 'mappings.yaml')
 
   [:user, :app, :dataset].each do |field|
     validates field, presence: true
@@ -32,7 +32,7 @@ class Mapping < ActiveRecord::Base
 
 
   def app_full_path
-    File.join(ENV['BSIR_PROJECT_SPACE'], app)
+    File.join(ENV['APP_PROJECT_SPACE'], app)
   end
 
 

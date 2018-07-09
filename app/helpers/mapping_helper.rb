@@ -15,7 +15,7 @@ module MappingHelper
   def app_list
     glob_results = Dir.glob(
       File.join File.expand_path(
-        ENV['BSIR_PROJECT_SPACE']
+        ENV['APP_PROJECT_SPACE']
       ), 'bc_shiny_*'
     )
 
@@ -36,7 +36,7 @@ module MappingHelper
   def known_datasets
     installed_datasets = Set.new Dir.glob(
       File.join File.expand_path(
-        ENV['BSIR_DATASET_ROOT']
+        ENV['APP_DATASET_ROOT']
       ), '*'
     )
 

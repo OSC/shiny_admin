@@ -113,7 +113,7 @@ class MappingController < ApplicationController
     # @return errors [Exception]
     def add_user_facls(user:, app:, dataset:)
       absolute_app_path = File.join File.expand_path(
-        ENV['BSIR_PROJECT_SPACE']
+        ENV['APP_PROJECT_SPACE']
       ), app
 
       # FIXME using the environment for FACL_USER_DOMAIN is expedient, but doesn't feel good
@@ -134,7 +134,7 @@ class MappingController < ApplicationController
 
     def remove_user_facls(user:, app:, dataset:)
       absolute_app_path = File.join File.expand_path(
-        ENV['BSIR_PROJECT_SPACE']
+        ENV['APP_PROJECT_SPACE']
       ), app
 
       entry = build_facl_entry_for_user user, ENV['FACL_USER_DOMAIN']
