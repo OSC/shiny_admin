@@ -54,7 +54,7 @@ class Mapping < ActiveRecord::Base
   private
 
   # Check whether a user has read/execute permissions on the app and dataset directories
-  # @return [Boolean] does user ahave correct permissions?
+  # @return [Boolean] does user have correct permissions?
   def user_has_permissions_on_both
     ood_user = OodSupport::User.new(user)
     required_permissions = [:r, :x]
