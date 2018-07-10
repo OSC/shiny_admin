@@ -24,20 +24,11 @@ class MappingController < ApplicationController
   def create
     params = mapping_params
     success = false
-
-    # Try adding FACLs first
-    # This protects against 
-    errors = add_user_facls(params.symbolize_keys)
-    unless errors.nil?
-      params[:reason] = errors.to_s
-      flash[:danger] = "Unable to add %{user} to FACLs for %{app} because %{reason}." % params.symbolize_keys
-      redirect_to new_mapping_path
-      return
-    end
+    mapping = nil
 
     begin
-      @mapping = Mapping.new(params)
-      success = @mapping.save
+      mapping = Mapping.new(params)
+      success = mapping.save
     rescue ActiveRecord::RecordNotUnique => e
       user = mapping_params[:user]
       app = mapping_params[:app]
@@ -55,6 +46,15 @@ class MappingController < ApplicationController
     if not success
       flash[:danger] = 'Creation of new mapping failed.'
       flash[:info] = 'Fields User, App, and Dataset are required and may not be blank.'
+      redirect_to new_mapping_path
+      return
+    end
+
+    errors = add_user_facls(params.symbolize_keys)
+    unless errors.nil?
+      params[:reason] = errors.to_s
+      flash[:danger] = "Unable to add %{user} to FACLs for %{app} because %{reason}." % params.symbolize_keys
+      mapping.destroy  # Don't keep an unusable mapping
       redirect_to new_mapping_path
       return
     end
