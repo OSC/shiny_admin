@@ -87,7 +87,7 @@ class Mapping < ActiveRecord::Base
     dataset_acl = nil
     begin
       dataset_acl = OodSupport::ACLs::Nfs4ACL.get_facl(path: dataset)
-    rescue OodSupport::InvalidPath
+    rescue OodSupport::InvalidPath, OodSupport::BadExitCode
       return false
     end
 

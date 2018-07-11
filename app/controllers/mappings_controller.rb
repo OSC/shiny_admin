@@ -11,16 +11,6 @@ class MappingsController < ApplicationController
   end
 
 
-  def show
-    @mapping = Mapping.find(params[:id])
-  end
-
-
-  def edit
-    @mapping = Mapping.find(params[:id])
-  end
-
-
   def create
     params = mapping_params
     success = false
@@ -51,7 +41,7 @@ class MappingsController < ApplicationController
     end
 
     flash[:success] = 'Mapping successfully created.'
-    redirect_to mapping_index_path
+    redirect_to action: :index
   end
 
 
@@ -65,7 +55,7 @@ class MappingsController < ApplicationController
       flash[:warning] = 'Unable to delete mapping ' + params[:id] + ' because ' + e.to_s
     end
 
-    redirect_to mapping_index_path
+    redirect_to mappings_path
   end
 
 
