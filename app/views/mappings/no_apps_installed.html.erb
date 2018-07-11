@@ -1,0 +1,8 @@
+<div class="container">
+  <div class="jumbotron">
+    <h1 class="display-4">No Apps Installed</h1>
+    <p>Please install one or more apps to <%= ENV['APP_PROJECT_SPACE'] =%>.</p>
+    <p>Datasets should be installed to <%= ENV['APP_DATASET_ROOT'] =%>.</p>
+  </div>
+  <%= link_to 'Back', mappings_path, class: 'btn btn-default' %>
+</div>

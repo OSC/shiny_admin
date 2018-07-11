@@ -1,18 +1,24 @@
 <div class="page-header">
   <h2>Creating Mapping</h2>
 </div>
-<%
-  app_list_is_empty = app_list.empty?
-  app_install_path = ENV['APP_PROJECT_SPACE']
-%>
-<% if app_list_is_empty %>
-  <div class="container">
-    <div class="jumbotron">
-      <h1 class="display-4">No Apps Installed</h1>
-      <p>Please install one or more apps to <%= app_install_path =%>.</p>
-    </div>
-    <%= link_to 'Back', mappings_path, class: 'btn btn-default' %>
-  </div>
-<% else %>
-  <%= render 'crud_form', mapping: @mapping %>
+<%= bootstrap_form_for(:mapping, url: mappings_path) do |f| %>
+  <%= f.alert_message 'Please fix the errors below.' %>
+
+  <%= f.select :user, user_list, :include_blank => true %>
+  <%= f.select :app, app_list.map{|uri| get_app_name uri}, :include_blank => true %>
+
+  <%= f.form_group :dataset, label: { text: 'Dataset (absolute path)' } do %>
+    <% known_datasets.each do |dataset| %>
+      <%= f.radio_button :dataset, dataset, label: dataset %>
+    <% end %>
+    <%= f.radio_button :dataset, 'dataset_non_std_location', label: 'Other' %>
+    <%= f.text_field :dataset_non_std_location_value, hide_label: true, disabled: true %>
+  <% end %>
+
+  <%= f.submit 'Save', class: 'btn btn-primary' %>
+  <%= f.button 'Reset', type: :reset, class: 'btn btn-default' %>
+
+  <hr>
+
+  <%= link_to 'Back', mappings_path, class: 'btn btn-default' %>
 <% end %>

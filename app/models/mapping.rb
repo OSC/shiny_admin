@@ -43,7 +43,6 @@ class Mapping < ActiveRecord::Base
   # Handle FACL setting / removal
 
   before_save do |mapping|
-    logger.info('Can change FACL' + can_change_facls?(mapping.dataset).to_s)
     # Short circuit if the admin user cannot set FACLS
     if can_change_facls?(mapping.dataset)
       errors = add_user_facls(mapping)

@@ -55,7 +55,7 @@ class MappingsController < ApplicationController
       flash[:warning] = 'Unable to delete mapping ' + params[:id] + ' because ' + e.to_s
     end
 
-    redirect_to mappings_path
+    redirect_to action: :index
   end
 
 
