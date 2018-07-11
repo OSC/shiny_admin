@@ -3,7 +3,7 @@ require 'ood_support'
 
 class MappingController < ApplicationController
   def index
-    @mappings = Mapping
+    @mappings = Mapping.all
   end
 
 
@@ -12,7 +12,7 @@ class MappingController < ApplicationController
 
 
   def show
-    @mapping = Mapping.find params[:id]
+    @mapping = Mapping.find(params[:id])
   end
 
 
@@ -50,15 +50,6 @@ class MappingController < ApplicationController
       return
     end
 
-    errors = add_user_facls(params.symbolize_keys)
-    unless errors.nil?
-      params[:reason] = errors.to_s
-      flash[:danger] = "Unable to add %{user} to FACLs for %{app} because %{reason}." % params.symbolize_keys
-      mapping.destroy  # Don't keep an unusable mapping
-      redirect_to new_mapping_path
-      return
-    end
-
     flash[:success] = 'Mapping successfully created.'
     redirect_to mapping_index_path
   end
@@ -69,7 +60,6 @@ class MappingController < ApplicationController
       id = params[:id]
       mapping = Mapping.find(id)
       mapping.destroy
-      remove_user_facls(user: mapping.user, app: mapping.app, dataset: mapping.dataset)
       flash[:success] = "Successfully deleted mapping."
     rescue Exception => e
       flash[:warning] = 'Unable to delete mapping ' + params[:id] + ' because ' + e.to_s
@@ -93,60 +83,5 @@ class MappingController < ApplicationController
       params[:mapping].delete(:dataset_non_std_location_value)
 
       params.require(:mapping).permit(:user, :app, :dataset)
-    end
-
-
-    # Build FACL for user and domain combination
-    # @return [Nfs4Entry]
-    def build_facl_entry_for_user(user, domain)
-      OodSupport::ACLs::Nfs4Entry.new(
-        type: :A,
-        flags: [],
-        principle: user,
-        domain: domain,
-        permissions: [:r, :x]
-      )
-    end
-
-
-    # Add user FACLs to app and dataset
-    # @return errors [Exception]
-    def add_user_facls(user:, app:, dataset:)
-      absolute_app_path = File.join File.expand_path(
-        ENV['APP_PROJECT_SPACE']
-      ), app
-
-      # FIXME using the environment for FACL_USER_DOMAIN is expedient, but doesn't feel good
-      entry = build_facl_entry_for_user user, ENV['FACL_USER_DOMAIN']
-
-      # Consider doing this in a transactional manner: everything succeeds or it all gets rolled back
-      errors = nil
-      begin
-        acl = OodSupport::ACLs::Nfs4ACL.add_facl(path: absolute_app_path, entry: entry)
-        acl = OodSupport::ACLs::Nfs4ACL.add_facl(path: dataset, entry: entry)
-      rescue Exception => e
-        errors = e
-      end
-
-      errors
-    end
-
-
-    def remove_user_facls(user:, app:, dataset:)
-      absolute_app_path = File.join File.expand_path(
-        ENV['APP_PROJECT_SPACE']
-      ), app
-
-      entry = build_facl_entry_for_user user, ENV['FACL_USER_DOMAIN']
-      errors = nil
-
-      begin
-        OodSupport::ACLs::Nfs4ACL.rem_facl(path: absolute_app_path, entry: entry)
-        OodSupport::ACLs::Nfs4ACL.rem_facl(path: dataset, entry: entry)
-      rescue Exception => e
-        errors = e
-      end
-
-      errors
     end
 end
