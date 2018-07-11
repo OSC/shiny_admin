@@ -1,4 +1,4 @@
-<%= bootstrap_form_for(:mapping, url: {:controller => 'mapping', :action => 'create'}) do |f| %>
+<%= bootstrap_form_for(:mapping, url: mappings_path) do |f| %>
   <%= f.alert_message 'Please fix the errors below.' %>
 
   <%= f.select :user, user_list, :include_blank => true %>
@@ -17,8 +17,9 @@
 
   <hr>
 
-  <%= link_to 'Back', mapping_index_path, class: 'btn btn-default' %>
+  <%= link_to 'Back', mappings_path, class: 'btn btn-default' %>
   <% if mapping and mapping.persisted? %>
-    <%= link_to 'Destroy', url_for(controller: 'mapping', action: 'destroy'), method: :delete, class: 'btn btn-danger', data: { confirm: 'Are you sure you want to delete this mapping?' } %>
+    <%# url_for(controller: 'mapping', action: 'destroy') %>
+    <%= link_to 'Destroy', mappings_path, method: :delete, class: 'btn btn-danger', data: { confirm: 'Are you sure you want to delete this mapping?' } %>
   <% end %>
 <% end %>

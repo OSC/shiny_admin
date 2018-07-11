@@ -11,7 +11,7 @@
       <h1 class="display-4">No Apps Installed</h1>
       <p>Please install one or more apps to <%= app_install_path =%>.</p>
     </div>
-    <%= link_to 'Back', mapping_index_path, class: 'btn btn-default' %>
+    <%= link_to 'Back', mappings_path, class: 'btn btn-default' %>
   </div>
 <% else %>
   <%= render 'crud_form', mapping: @mapping %>

@@ -18,7 +18,7 @@
       <td><%= mapping.dataset %></td>
       <td><%= mapping.is_still_valid? ? fa_icon('check') : fa_icon('exclamation-triangle') %></td>
       <td><%= mapping.updated_at %></td>
-      <td><%= link_to 'Destroy', mapping_path(mapping.id), method: :delete, class: 'btn btn-danger', data: { confirm: 'Are you sure you want to delete this mapping?' } %></td>
+      <td><%= link_to 'Destroy', { action: :destroy, id: mapping.id }, class: 'btn btn-danger', data: { confirm: 'Are you sure you want to delete this mapping?' } %></td>
     </tr>
     <% end %>
   </tbody>
