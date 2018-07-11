@@ -1,6 +1,6 @@
 require 'uri'
 
-module MappingHelper
+module MappingsHelper
   def user_list
     users_from_group = ENV['USERS_FROM_GROUP']
     result = `getent group #{users_from_group}`

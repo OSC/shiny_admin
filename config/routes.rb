@@ -1,5 +1,5 @@
 Rails.application.routes.draw do
-  resources :mapping
+  resources :mappings
 
-  root 'mapping#index'
+  root 'mappings#index'
 end

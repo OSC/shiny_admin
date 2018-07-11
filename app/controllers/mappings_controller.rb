@@ -1,7 +1,7 @@
 require 'ood_support'
 
 
-class MappingController < ApplicationController
+class MappingsController < ApplicationController
   def index
     @mappings = Mapping.all
   end
