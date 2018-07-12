@@ -38,9 +38,9 @@ module MappingsHelper
       File.join File.expand_path(
         ENV['APP_DATASET_ROOT']
       ), '*'
-    )
+    ).sort
 
-    # Sort the lists, keeping the two location types separate
-    installed_datasets.to_a.sort | Mapping.datasets
+    # Take the union of the two sets of datasets
+    installed_datasets | Mapping.datasets
   end
 end

@@ -14,7 +14,7 @@ class MappingsController < ApplicationController
   def create
     @mapping = Mapping.new(mapping_params)
 
-    if @mapping.attempt_save
+    if @mapping.save_and_set_facls
       flash[:success] = @mapping.save_message
       redirect_to action: :index
     else
@@ -25,7 +25,7 @@ class MappingsController < ApplicationController
 
   # POST /mappings
   def destroy 
-    if Mapping.attempt_destroy(params[:id])
+    if Mapping.destroy_and_remove_facls(params[:id])
       flash[:success] = 'Successfully deleted mapping.'
       redirect_to action: :index
     else

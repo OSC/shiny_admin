@@ -27,7 +27,7 @@ class Mapping < ActiveRecord::Base
     end
   end
 
-  def self.attempt_destroy(id)
+  def self.destroy_and_remove_facls(id)
     begin
       mapping = find(id)
       mapping.destroy
@@ -56,21 +56,21 @@ class Mapping < ActiveRecord::Base
     {:app => app, :user => user, :dataset => dataset, :extensions => extensions}
   end
 
-  def attempt_save
-      begin
-        success = save
-        @save_message = 'Mapping successfully created.'
+  def save_and_set_facls
+    begin
+      success = save
+      @save_message = 'Mapping successfully created.'
 
-        return true
-      rescue ActiveRecord::RecordNotUnique => e
-        @save_message = "Unable to create duplicate mapping between #{user}, #{app} and #{dataset}"
-        
-        return false
-      rescue Exception => e
-        @save_message = "An unknown error has occured: " + e.to_s
-        
-        return false
-      end
+      return true
+    rescue ActiveRecord::RecordNotUnique => e
+      @save_message = "Unable to create duplicate mapping between #{user}, #{app} and #{dataset}"
+      
+      return false
+    rescue Exception => e
+      @save_message = "An unknown error has occured: " + e.to_s
+      
+      return false
+    end
   end
 
   # Handle FACL setting / removal
