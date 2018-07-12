@@ -2,20 +2,17 @@ require 'ood_support'
 require 'yaml/store'
 
 class Mapping < ActiveRecord::Base
+  attr_accessor :save_message
+
   YAML_FILE_PATH = File.join(ENV['APP_PROJECT_SPACE'], 'mappings.yaml')
 
   [:user, :app, :dataset].each do |field|
     validates field, presence: true
   end
 
-
-  def is_still_valid?
-    app_exists = File.directory?(app_full_path)
-    dataset_exists = File.directory?(dataset)
-
-    return app_exists && dataset_exists && user_has_permissions_on_both
+  def self.datasets
+    select(:dataset).distinct.order(:dataset).pluck(:dataset)
   end
-
 
   def self.dump_to_yaml
     mappings = []
@@ -30,14 +27,50 @@ class Mapping < ActiveRecord::Base
     end
   end
 
+  def self.attempt_destroy(id)
+    begin
+      mapping = find(id)
+      mapping.destroy
+      @save_message = 'Mapping successfully destroyed.'
+
+      return true
+    rescue Exception => e
+      @save_message = 'Unable to destroy mapping because ' + e.to_s
+
+      return false
+    end
+  end
+
+  def is_still_valid?
+    app_exists = File.directory?(app_full_path)
+    dataset_exists = File.directory?(dataset)
+
+    return app_exists && dataset_exists && user_has_permissions_on_both
+  end
 
   def app_full_path
     File.join(ENV['APP_PROJECT_SPACE'], app)
   end
 
-
   def to_hash
     {:app => app, :user => user, :dataset => dataset, :extensions => extensions}
+  end
+
+  def attempt_save
+      begin
+        success = save
+        @save_message = 'Mapping successfully created.'
+
+        return true
+      rescue ActiveRecord::RecordNotUnique => e
+        @save_message = "Unable to create duplicate mapping between #{user}, #{app} and #{dataset}"
+        
+        return false
+      rescue Exception => e
+        @save_message = "An unknown error has occured: " + e.to_s
+        
+        return false
+      end
   end
 
   # Handle FACL setting / removal
@@ -123,9 +156,14 @@ class Mapping < ActiveRecord::Base
   # may be valid, but the admin user will not be able to set FACLS, and
   # should not try.
   def can_change_facls?(path)
-    File.stat(path).owned?
-  end
+    owns = false
+    begin
+      owns = File.stat(path).owned?
+    rescue
+    end
 
+    owns
+  end
 
   # Add user FACLs to app and dataset
   # @return errors [Exception]

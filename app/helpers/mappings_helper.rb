@@ -34,16 +34,13 @@ module MappingsHelper
   # datasets that have been saved to the database but are stored in nonstandard
   # locations.
   def known_datasets
-    installed_datasets = Set.new Dir.glob(
+    installed_datasets = Dir.glob(
       File.join File.expand_path(
         ENV['APP_DATASET_ROOT']
       ), '*'
     )
 
-    persisted_datasets = Set.new Mapping.select(:dataset).map(&:dataset)
-    non_std_location_datasets = persisted_datasets - installed_datasets
-
     # Sort the lists, keeping the two location types separate
-    installed_datasets.to_a.sort + non_std_location_datasets.to_a.sort
+    installed_datasets.to_a.sort | Mapping.datasets
   end
 end

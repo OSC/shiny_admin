@@ -3,59 +3,35 @@ require 'ood_support'
 
 class MappingsController < ApplicationController
   def index
-    @mappings = Mapping.all
   end
 
 
+  # GET /mappings/new
   def new
   end
 
-
+  # POST /mappings
   def create
-    params = mapping_params
-    success = false
-    mapping = nil
+    @mapping = Mapping.new(mapping_params)
 
-    begin
-      mapping = Mapping.new(params)
-      success = mapping.save
-    rescue ActiveRecord::RecordNotUnique => e
-      user = mapping_params[:user]
-      app = mapping_params[:app]
-      dataset = mapping_params[:dataset]
-
-      flash[:danger] = "Unable to create duplicate mapping between #{user}, #{app} and #{dataset}"
-      redirect_to new_mapping_path
-      return
-    rescue Exception => e
-      flash[:danger] = "An unknown error has occured: " + e.to_s
-      redirect_to new_mapping_path
-      return
+    if @mapping.attempt_save
+      flash[:success] = @mapping.save_message
+      redirect_to action: :index
+    else
+      flash[:warning] = 'Unable to create new mapping. ' + @mapping.save_message
+      redirect_to new_mapping_path, locals: params
     end
-
-    if not success
-      flash[:danger] = 'Creation of new mapping failed.'
-      flash[:info] = 'Fields User, App, and Dataset are required and may not be blank.'
-      redirect_to new_mapping_path
-      return
-    end
-
-    flash[:success] = 'Mapping successfully created.'
-    redirect_to action: :index
   end
 
-
-  def destroy
-    begin
-      id = params[:id]
-      mapping = Mapping.find(id)
-      mapping.destroy
-      flash[:success] = "Successfully deleted mapping."
-    rescue Exception => e
-      flash[:warning] = 'Unable to delete mapping ' + params[:id] + ' because ' + e.to_s
+  # POST /mappings
+  def destroy 
+    if Mapping.attempt_destroy(params[:id])
+      flash[:success] = 'Successfully deleted mapping.'
+      redirect_to action: :index
+    else
+      flash[:danger] = 'Unable to delete mapping ' + params[:id]
+      redirect_to action: :index
     end
-
-    redirect_to action: :index
   end
 
 
