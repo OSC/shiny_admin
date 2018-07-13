@@ -11,25 +11,17 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170620202715) do
+ActiveRecord::Schema.define(version: 20180628173447) do
 
-  create_table "blast_jobs", force: :cascade do |t|
-    t.integer  "blast_id"
-    t.string   "status"
-    t.text     "job_cache"
-    t.datetime "created_at"
-    t.datetime "updated_at"
+  create_table "mappings", force: :cascade do |t|
+    t.string   "user",       null: false
+    t.string   "app",        null: false
+    t.string   "dataset",    null: false
+    t.text     "extensions"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
-  add_index "blast_jobs", ["blast_id"], name: "index_blast_jobs_on_blast_id"
-
-  create_table "blasts", force: :cascade do |t|
-    t.string   "name"
-    t.string   "sequence"
-    t.string   "staged_dir"
-    t.datetime "created_at"
-    t.datetime "updated_at"
-    t.string   "job_attrs"
-  end
+  add_index "mappings", ["user", "app", "dataset"], name: "index_mappings_on_user_and_app_and_dataset", unique: true
 
 end

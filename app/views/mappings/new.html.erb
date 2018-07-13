@@ -1,0 +1,24 @@
+<div class="page-header">
+  <h2>Creating Mapping</h2>
+</div>
+<%= bootstrap_form_for(:mapping, url: mappings_path) do |f| %>
+  <%= f.alert_message 'Please fix the errors below.' %>
+
+  <%= f.select :user, user_list, :include_blank => true %>
+  <%= f.select :app, app_list.map{|uri| get_app_name uri}, :include_blank => true %>
+
+  <%= f.form_group :dataset, label: { text: 'Dataset (absolute path)' } do %>
+    <% known_datasets.each do |dataset| %>
+      <%= f.radio_button :dataset, dataset, label: dataset %>
+    <% end %>
+    <%= f.radio_button :dataset, 'dataset_non_std_location', label: 'Other' %>
+    <%= f.text_field :dataset_non_std_location_value, hide_label: true, disabled: true %>
+  <% end %>
+
+  <%= f.submit 'Save', class: 'btn btn-primary' %>
+  <%= f.button 'Reset', type: :reset, class: 'btn btn-default' %>
+
+  <hr>
+
+  <%= link_to 'Back', mappings_path, class: 'btn btn-default' %>
+<% end %>

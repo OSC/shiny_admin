@@ -1,16 +1,6 @@
-## OSUMC Blast App
+## Shiny Admin App
 
-
-## License
-
-### Domain specific code licensed via CC-by-4.0
-
-These three files contain domain specific code from the Zhang Lab of Computational Genomics and Proteomics at OSU BMI and require attribution. They are protected by the [CC-by-4.0](https://creativecommons.org/licenses/by/4.0/) license 
-- [alignment_toolbox.py](jobs/blast/alignment_toolbox.py)
-- [query2tree.py](jobs/blast/query2tree.py)
-- [blasts.js](app/assets/javascripts/blasts.js)
-
-See [full license text](LICENSE_CC_BY_4.0)
+Create mappings between users, datasets, and apps.
 
 ### The rest of the code is licensed using the MIT license:
 

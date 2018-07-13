@@ -1,7 +1,7 @@
 require 'pathname'
 require 'dotenv'
 
-# PseudoFuN app specific configuration singleton definition
+# shiny_admin app specific configuration singleton definition
 #
 # following the first proposal in:
 #
@@ -24,7 +24,7 @@ class ConfigurationSingleton
   # The app's configuration root directory
   # @return [Pathname] path to configuration root
   def config_root
-    Pathname.new(ENV["OOD_APP_CONFIG_ROOT"] || "/etc/ood/config/apps/pseudofun")
+    Pathname.new(ENV["OOD_APP_CONFIG_ROOT"] || "/etc/ood/config/apps/shiny_admin")
   end
 
   def load_external_config?
@@ -36,7 +36,7 @@ class ConfigurationSingleton
   #
   # Doing this in two separate loads means OOD_APP_CONFIG_ROOT can be specified in
   # the .env.local file, which will specify where to look for the /etc dotenv
-  # files. The default for OOD_APP_CONFIG_ROOT is /etc/ood/config/apps/pseudofun and
+  # files. The default for OOD_APP_CONFIG_ROOT is /etc/ood/config/apps/shiny_admin and
   # both .env and .env.production will be searched for there.
   def load_dotenv_files
     # .env.local first, so it can override OOD_APP_CONFIG_ROOT
@@ -57,7 +57,7 @@ class ConfigurationSingleton
     #
     root = ENV['OOD_DATAROOT'] || ENV['RAILS_DATAROOT']
     if rails_env == "production"
-      root ||= "~/#{ENV['OOD_PORTAL'] || 'ondemand'}/data/#{ENV['APP_TOKEN'] || 'sys/pseudofun'}"
+      root ||= "~/#{ENV['OOD_PORTAL'] || 'ondemand'}/data/#{ENV['APP_TOKEN'] || 'sys/shiny_admin'}"
     else
       root ||= app_root.join("data")
     end
@@ -69,9 +69,9 @@ class ConfigurationSingleton
     if ENV['APP_TOKEN']
       ENV['APP_TOKEN']
     elsif rails_env == "production"
-      "sys/#{ENV['OOD_PORTAL'] || 'ondemand'}/pseudofun"
+      "sys/#{ENV['OOD_PORTAL'] || 'ondemand'}/shiny_admin"
     else
-      "#{rails_env}/pseudofun"
+      "#{rails_env}/shiny_admin"
     end
   end
 
