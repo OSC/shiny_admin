@@ -34,7 +34,7 @@ class Mapping < ActiveRecord::Base
       @save_message = 'Mapping successfully destroyed.'
 
       return true
-    rescue Exception => e
+    rescue OodSupport::InvalidPath, OodSupport::BadExitCode => e
       @save_message = 'Unable to destroy mapping because ' + e.to_s
 
       return false
@@ -202,7 +202,7 @@ class Mapping < ActiveRecord::Base
     begin
       OodSupport::ACLs::Nfs4ACL.rem_facl(path: absolute_app_path, entry: entry)
       OodSupport::ACLs::Nfs4ACL.rem_facl(path: dataset, entry: entry)
-    rescue Exception => e
+    rescue OodSupport::InvalidPath, OodSupport::BadExitCode => e
       errors = e
     end
 
