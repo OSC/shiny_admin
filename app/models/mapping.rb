@@ -66,8 +66,8 @@ class Mapping < ActiveRecord::Base
       @save_message = "Unable to create duplicate mapping between #{user}, #{app} and #{dataset}"
       
       return false
-    rescue Exception => e
-      @save_message = "An unknown error has occured: " + e.to_s
+    rescue OodSupport::InvalidPath, OodSupport::BadExitCode => e
+      @save_message = "Unable to set FACLS because " + e.to_s
       
       return false
     end
@@ -180,7 +180,7 @@ class Mapping < ActiveRecord::Base
     begin
       acl = OodSupport::ACLs::Nfs4ACL.add_facl(path: absolute_app_path, entry: entry)
       acl = OodSupport::ACLs::Nfs4ACL.add_facl(path: mapping.dataset, entry: entry)
-    rescue Exception => e
+    rescue OodSupport::InvalidPath, OodSupport::BadExitCode => e
       errors = e
     end
 
