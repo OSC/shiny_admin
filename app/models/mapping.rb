@@ -5,10 +5,7 @@ class Mapping < ActiveRecord::Base
   attr_accessor :save_message
 
   YAML_FILE_PATH = File.join(ENV['APP_PROJECT_SPACE'], 'mappings.yaml')
-
-  [:user, :app, :dataset].each do |field|
-    validates field, presence: true
-  end
+  validates :user, :app, :dataset, presence: true
 
   def self.datasets
     select(:dataset).distinct.order(:dataset).pluck(:dataset)
@@ -73,6 +70,27 @@ class Mapping < ActiveRecord::Base
     end
   end
 
+  # Only change FACLs if they can and need to be changed
+  def should_add_facl?(path)
+    !rx_acl_exists_for_path?(path) && can_change_facls?(path)
+  end
+
+  def should_remove_dataset_facl?
+    # puts dataset_uniq_for_user?
+    # puts rx_acl_exists_for_path?(dataset)
+    # puts can_change_facls?(dataset)
+
+    dataset_uniq_for_user? && rx_acl_exists_for_path?(dataset) && can_change_facls?(dataset)
+  end
+
+  def should_remove_app_facl?
+    # puts app_uniq_for_user?
+    # puts rx_acl_exists_for_path?(app)
+    # puts can_change_facls?(app)
+
+    app_uniq_for_user? && rx_acl_exists_for_path?(app) && can_change_facls?(app_full_path)
+  end
+
   # Handle FACL setting / removal
 
   before_save do |mapping|
@@ -106,8 +124,15 @@ class Mapping < ActiveRecord::Base
     Mapping.dump_to_yaml
   end
 
-
   private
+
+  def dataset_uniq_for_user?
+    Mapping.where(user: user, dataset: dataset).count <= 1
+  end
+
+  def app_uniq_for_user?
+    Mapping.where(user: user, app: app).count <= 1
+  end
 
   # Check whether a user has read/execute permissions on the app and dataset directories
   # @return [Boolean] does user have correct permissions?
@@ -137,6 +162,18 @@ class Mapping < ActiveRecord::Base
     return true
   end
 
+  def rx_acl_exists_for_path?(path)
+    begin
+      domain = ENV['FACL_USER_DOMAIN']
+      acl = OodSupport::ACLs::Nfs4ACL.get_facl(path: dataset)
+      expected = build_facl_entry_for_user('user', domain)
+
+      return acl.entries.include?(expected)
+    rescue
+      return false
+    end
+  end
+
   # Build FACL for user and domain combination
   # @return [Nfs4Entry]
   def build_facl_entry_for_user(user, domain)
@@ -151,7 +188,7 @@ class Mapping < ActiveRecord::Base
 
   # Determine if FACLs can be set by the admin user
   #
-  # Data sets may be stored in non-standard locations, and oqwned by users
+  # Data sets may be stored in non-standard locations, and owned by users
   # other than the admin user. In the case of a non-owned dataset a mapping
   # may be valid, but the admin user will not be able to set FACLS, and
   # should not try.

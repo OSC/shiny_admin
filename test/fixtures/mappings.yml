@@ -1,13 +1,13 @@
 # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  user: MyString
-  app: MyString
-  dataset: MyString
+  user: mrodgers
+  app: app_01
+  dataset: ds_01
   extensions: MyText
 
 two:
-  user: MyString
-  app: MyString
-  dataset: MyString
+  user: mrodgers
+  app: app_01
+  dataset: ds_00
   extensions: MyText
