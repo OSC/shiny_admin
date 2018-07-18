@@ -1,11 +1,16 @@
 require 'ood_support'
+require 'pathname'
 require 'yaml/store'
 
 class Mapping < ActiveRecord::Base
   attr_accessor :save_message
-
-  YAML_FILE_PATH = File.join(ENV['APP_PROJECT_SPACE'], 'mappings.yaml')
   validates :user, :app, :dataset, presence: true
+  YAML_FILE_PATH = Pathname.new(ENV['APP_PROJECT_SPACE']).expand_path().join('mappings.yaml')
+  APP_ROOT = Pathname.new(ENV['APP_PROJECT_SPACE']).expand_path()
+
+  def dataset
+    Pathname.new(super)
+  end
 
   def self.datasets
     select(:dataset).distinct.order(:dataset).pluck(:dataset)
@@ -39,14 +44,14 @@ class Mapping < ActiveRecord::Base
   end
 
   def is_still_valid?
-    app_exists = File.directory?(app_full_path)
-    dataset_exists = File.directory?(dataset)
+    app_exists = app_full_path.directory?
+    dataset_exists = dataset.directory?
 
     return app_exists && dataset_exists && user_has_permissions_on_both
   end
 
   def app_full_path
-    File.join(ENV['APP_PROJECT_SPACE'], app)
+    APP_ROOT.join(app)
   end
 
   def to_hash
@@ -76,18 +81,10 @@ class Mapping < ActiveRecord::Base
   end
 
   def should_remove_dataset_facl?
-    # puts dataset_uniq_for_user?
-    # puts rx_acl_exists_for_path?(dataset)
-    # puts can_change_facls?(dataset)
-
     dataset_uniq_for_user? && rx_acl_exists_for_path?(dataset) && can_change_facls?(dataset)
   end
 
   def should_remove_app_facl?
-    # puts app_uniq_for_user?
-    # puts rx_acl_exists_for_path?(app)
-    # puts can_change_facls?(app)
-
     app_uniq_for_user? && rx_acl_exists_for_path?(app) && can_change_facls?(app_full_path)
   end
 
@@ -195,7 +192,7 @@ class Mapping < ActiveRecord::Base
   def can_change_facls?(path)
     owns = false
     begin
-      owns = File.stat(path).owned?
+      owns = path.owned?
     rescue
     end
 
@@ -205,10 +202,7 @@ class Mapping < ActiveRecord::Base
   # Add user FACLs to app and dataset
   # @return errors [Exception]
   def add_user_facls(mapping)
-    absolute_app_path = File.join(
-      File.expand_path(ENV['APP_PROJECT_SPACE']),
-      mapping.app
-    )
+    absolute_app_path = APP_ROOT.join(mapping.app)
 
     # FIXME using the environment for FACL_USER_DOMAIN is expedient, but doesn't feel good
     entry = build_facl_entry_for_user(mapping.user, ENV['FACL_USER_DOMAIN'])
@@ -226,12 +220,7 @@ class Mapping < ActiveRecord::Base
 
   # Remove FACLS for user from app and dataset
   def remove_user_facls(mapping)
-    absolute_app_path = File.join(
-      File.expand_path(
-        ENV['APP_PROJECT_SPACE']
-      ),
-      mapping.app
-    )
+    absolute_app_path = APP_ROOT.join(mapping.app)
 
     entry = build_facl_entry_for_user(mapping.user, ENV['FACL_USER_DOMAIN'])
     errors = nil
