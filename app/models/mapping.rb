@@ -7,8 +7,8 @@ require 'yaml/store'
 class Mapping < ActiveRecord::Base
   attr_accessor :save_message
   validates :user, :app, :dataset, presence: true
-  YAML_FILE_PATH = Pathname.new(ENV['APP_PROJECT_SPACE']).expand_path().join('mappings.yaml')
-  APP_ROOT = Pathname.new(ENV['APP_PROJECT_SPACE']).expand_path()
+  YAML_FILE_PATH = Pathname.new(ENV['SHARED_APPS_ROOT']).expand_path().join('mappings.yaml')
+  APP_ROOT = Pathname.new(ENV['SHARED_APPS_ROOT']).expand_path()
   FACL_USER_DOMAIN = ENV['FACL_USER_DOMAIN']
 
   def dataset

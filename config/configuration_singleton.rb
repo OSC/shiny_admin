@@ -76,7 +76,7 @@ class ConfigurationSingleton
   end
 
   def shared_apps_root
-    Pathname.new(ENV['APP_PROJECT_SPACE']).expand_path
+    Pathname.new(ENV['SHARED_APPS_ROOT']).expand_path
   end
 
   def app_dataset_root

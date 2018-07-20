@@ -7,7 +7,7 @@ require 'pathname'
 class MappingTest < ActiveSupport::TestCase
   def setup
     @dataset_root = Pathname.new(ENV['APP_DATASET_ROOT'])
-    @app_root = Pathname.new(ENV['APP_PROJECT_SPACE'])
+    @app_root = Pathname.new(ENV['SHARED_APPS_ROOT'])
     @existent_ds_path_00 = @dataset_root.join('test_ds_00')
     @existent_ds_path_01 = @dataset_root.join('test_ds_01')
     @existent_app_path_00 = @app_root.join('test_app_00')
