@@ -18,6 +18,7 @@ class Mapping < ActiveRecord::Base
     Pathname.new(super)
   end
 
+  # @return [Array<String>]
   def self.datasets
     select(:dataset).distinct.order(:dataset).pluck(:dataset)
   end
@@ -40,10 +41,12 @@ class Mapping < ActiveRecord::Base
   end
 
   # Ensure that a user can use a given mapping
+  # @return [Boolean]
   def is_still_valid?
     return app.exist? && dataset.exist? && user_has_permissions_on_both?
   end
 
+  # @return [Hash]
   def to_hash
     {:app => app, :user => user, :dataset => dataset, :extensions => extensions}
   end
@@ -87,6 +90,7 @@ class Mapping < ActiveRecord::Base
     end
   end
 
+  # @return [Boolean]
   def should_add_facl?(pathname)
     # Calling owned first protects rx_facl_exists? from throwing InvalidPath
     pathname.owned? && ! rx_facl_exists?(pathname)
@@ -109,20 +113,9 @@ class Mapping < ActiveRecord::Base
     ).count <= 1
   end
 
+  # @return [Boolean]
   def should_remove_facl?(pathname)
-    if !pathname.writable?
-      return false
-    end
-
-    if !rx_facl_exists?(pathname)
-      return false
-    end
-
-    if !pathname_uniq_for_user?(pathname)
-      return false
-    end
-
-    return true
+    pathname.owned? && rx_facl_exists?(pathname) && pathname_uniq_for_user?(pathname)
   end
 
   # Conditionally remove RX FACLs
