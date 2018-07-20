@@ -2,7 +2,6 @@ require 'ood_support'
 require 'pathname'
 require 'yaml/store'
 
-# Check if app_full_path can be removed without breaking anything
 
 class Mapping < ActiveRecord::Base
   attr_accessor :save_message
@@ -26,7 +25,11 @@ class Mapping < ActiveRecord::Base
   def self.dump_to_yaml
     mappings = []
     Mapping.find_each do |mapping|
-      mappings << mapping.to_hash
+      mapping_as_hash = mapping.to_hash
+      mapping_as_hash[:app] = mapping_as_hash[:app].to_s
+      mapping_as_hash[:dataset] = mapping_as_hash[:dataset].to_s
+
+      mappings << mapping_as_hash
     end
 
     store = YAML::Store.new(YAML_FILE_PATH)
@@ -38,7 +41,7 @@ class Mapping < ActiveRecord::Base
 
   # Ensure that a user can use a given mapping
   def is_still_valid?
-    return app.exist? && dataset.exist? && user_has_permissions_on_both
+    return app.exist? && dataset.exist? && user_has_permissions_on_both?
   end
 
   def to_hash
@@ -85,24 +88,13 @@ class Mapping < ActiveRecord::Base
   end
 
   def should_add_facl?(pathname)
-    # Using writable would try setting a FACL on /dev/null...
-    if !pathname.owned?
-      return false
-    end
-
-    # Protected from throwing InvalidPath by the writable? check
-    if rx_facl_exists?(pathname)
-      return false
-    end
-
-    return true
+    # Calling owned first protects rx_facl_exists? from throwing InvalidPath
+    pathname.owned? && ! rx_facl_exists?(pathname)
   end
 
   # Idempotently add a RX entry to the ACL for a file
   def add_rx_facl(pathname)
-    unless should_add_facl?(pathname)
-      return
-    end
+    return unless should_add_facl?(pathname)
 
     entry = build_facl_entry_for_user(user, FACL_USER_DOMAIN)
     OodSupport::ACLs::Nfs4ACL.add_facl(path: pathname, entry: entry)
@@ -138,9 +130,7 @@ class Mapping < ActiveRecord::Base
   # Remove only if file exists, is owned, entry exists, user + (dataset, app)
   # combination is last in database
   def remove_rx_facl(pathname)
-    unless should_remove_facl?(pathname)
-      return
-    end
+    return unless should_remove_facl?(pathname)
 
     entry = build_facl_entry_for_user(user, FACL_USER_DOMAIN)
     OodSupport::ACLs::Nfs4ACL.rem_facl(path: pathname, entry: entry)
@@ -173,7 +163,7 @@ class Mapping < ActiveRecord::Base
 
   # Check whether a user has read/execute permissions on the app and dataset directories
   # @return [Boolean] does user have correct permissions?
-  def user_has_permissions_on_both
+  def user_has_permissions_on_both?
     ood_user = OodSupport::User.new(user)
     required_permissions = [:r, :x]
 
