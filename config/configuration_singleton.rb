@@ -75,6 +75,14 @@ class ConfigurationSingleton
     end
   end
 
+  def shared_apps_root
+    Pathname.new(ENV['APP_PROJECT_SPACE']).expand_path
+  end
+
+  def app_dataset_root
+    Pathname.new(ENV['APP_DATASET_ROOT']).expand_path
+  end
+
   def production_database_path
     # FIXME: add support/handling for DATABASE_URL
     Pathname.new(ENV["DATABASE_PATH"] || dataroot.join('production.sqlite3'))
