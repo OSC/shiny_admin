@@ -14,9 +14,10 @@ module MappingsHelper
   # Get a list of the various Shiny apps
   def app_list
     glob_results = Dir.glob(
-      File.join File.expand_path(
-        ENV['APP_PROJECT_SPACE']
-      ), 'bc_shiny_*'
+      File.join(
+        File.expand_path(ENV['APP_PROJECT_SPACE']),
+        'bc_shiny_*'
+      )
     )
 
     # Create a sorted list of just the App directory

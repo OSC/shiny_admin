@@ -5,7 +5,7 @@
   <%= f.alert_message 'Please fix the errors below.' %>
 
   <%= f.select :user, user_list, :include_blank => true %>
-  <%= f.select :app, app_list.map{|uri| get_app_name uri}, :include_blank => true %>
+  <%= f.select :app, app_list.map{|uri| [get_app_name(uri), uri]}, :include_blank => true %>
 
   <%= f.form_group :dataset, label: { text: 'Dataset (absolute path)' } do %>
     <% known_datasets.each do |dataset| %>

@@ -1,18 +1,23 @@
 require 'test_helper'
 require 'mocha/test_unit'
 require 'fileutils'
+require 'pathname'
 
 
 class MappingTest < ActiveSupport::TestCase
   def setup
-    @dataset_root = ENV['APP_DATASET_ROOT']
-    @app_root = ENV['APP_PROJECT_SPACE']
-    @existent_ds_path = File.join(@dataset_root, 'test_ds_00')
-    @existent_app_path = File.join(@app_root, 'test_app_00')
+    @dataset_root = Pathname.new(ENV['APP_DATASET_ROOT'])
+    @app_root = Pathname.new(ENV['APP_PROJECT_SPACE'])
+    @existent_ds_path_00 = @dataset_root.join('test_ds_00')
+    @existent_ds_path_01 = @dataset_root.join('test_ds_01')
+    @existent_app_path_00 = @app_root.join('test_app_00')
+    @existent_app_path_01 = @app_root.join('test_app_01')
 
     @testing_dirs = [
-      @existent_ds_path,
-      @existent_app_path,
+      @existent_ds_path_00,
+      @existent_app_path_00,
+      @existent_ds_path_01,
+      @existent_app_path_01,
     ]
 
     @testing_dirs.each { |dir| FileUtils.mkdir_p(dir) }
@@ -22,60 +27,59 @@ class MappingTest < ActiveSupport::TestCase
     @testing_dirs.each { |dir| FileUtils.rmdir(dir) }
   end
 
-  # ============================ #
+  # # ============================ #
 
-  def test_that_testing_is_properly_setup
-    assert true
+  def test_add_mapping_adds_facls
+    mapping = Mapping.new(user: 'efranz', app: @existent_app_path_00, dataset: @existent_ds_path_00)
+
+    assert mapping.should_add_facl?(@existent_app_path_00)
+    assert mapping.should_add_facl?(@existent_ds_path_00)
   end
 
-  # Test FACL settings/removing logic
-
-  # Files unowned by admin
   def test_facls_should_not_be_set_if_admin_does_not_own_the_files
-    mapping = Mapping.new(user: 'user', app: 'test_app_00', dataset: '/dev/null')
+    unowned_dataset = Pathname.new('/dev/null')
+    mapping = Mapping.new(user: 'efranz', app: @existent_app_path_00, dataset: unowned_dataset)
 
-    assert mapping.should_add_facl?(mapping.dataset) == false
+    assert mapping.should_add_facl?(@existent_app_path_00)
+    assert !mapping.should_add_facl?(unowned_dataset)
   end
 
-  # Setting FACL entry for the first time
-  def test_facls_are_set_if_not_already_set
-    mapping = Mapping.new(user: 'user', app: 'test_app_00', dataset: @existent_ds_path)
+  def test_existing_facls_are_not_duplicated
+    mapping = Mapping.new(user: 'efranz', app: @existent_app_path_00, dataset: @existent_ds_path_00)
 
-    assert mapping.should_add_facl?(mapping.dataset) == true
+    mapping.expects(:rx_facl_exists?).returns(true).twice
+
+    assert !mapping.should_add_facl?(mapping.app)
+    assert !mapping.should_add_facl?(mapping.dataset)
   end
 
-  # Setting FACL entry already exists
-  def test_facls_are_not_be_set_if_already_set
-    mapping = Mapping.new(user: 'user', app: 'test_app_00', dataset: @existent_ds_path)
-    mapping.expects(:rx_acl_exists_for_path?).returns(true)
-
-    assert mapping.should_add_facl?(mapping.dataset) == false
-  end
-
-  # Removing FACL entry NOT last of its kind
   def test_facls_are_not_removed_if_similar_mappings_exist
-    mapping = Mapping.new(user: 'user', app: 'test_app_00', dataset: @existent_ds_path)
-    mapping.expects(:dataset_uniq_for_user?).returns(false)
-    mapping.expects(:app_uniq_for_user?).returns(false)
+    mapping_a = Mapping.new(user: 'efranz', app: @existent_app_path_00, dataset: @existent_ds_path_00)
+    mapping_a.save
 
-    assert mapping.should_remove_dataset_facl? == false
-    assert mapping.should_remove_app_facl? == false
+    mapping_b = Mapping.new(user: 'efranz', app: @existent_app_path_00, dataset: @existent_app_path_01)
+    mapping_b.save
+
+    mapping_b.expects(:rx_facl_exists?).returns(true).twice
+
+    assert !mapping_b.should_remove_facl?(mapping_b.app)
+    assert mapping_b.should_remove_facl?(mapping_b.dataset)
   end
 
-  # Removing FACL entry last of its kind
   def test_facls_are_removed_if_no_similar_mappings_exist
-    mapping = Mapping.new(user: 'user', app: 'test_app_00', dataset: @existent_ds_path)
+    mapping = Mapping.new(user: 'user', app: @existent_app_path_00, dataset: @existent_ds_path_00)
+    mapping.save
 
-    mapping.expects(:dataset_uniq_for_user?).returns(true)
-    mapping.expects(:rx_acl_exists_for_path?).returns(true)
-    assert mapping.should_remove_dataset_facl? == true
+    mapping.expects(:rx_facl_exists?).returns(true).twice
 
-    mapping.expects(:app_uniq_for_user?).returns(true)
-    mapping.expects(:rx_acl_exists_for_path?).returns(true)
-    assert mapping.should_remove_app_facl? == true
+    assert mapping.should_remove_facl?(mapping.app)
+    assert mapping.should_remove_facl?(mapping.dataset)
   end
 
-  # Test database operations
+  def test_facls_should_not_be_modified_if_admin_does_not_own_the_files
+    mapping = Mapping.new(user: 'user', app: @existent_app_path_00, dataset: '/dev/null')
 
-  # TODO
+    assert !mapping.should_add_facl?(mapping.dataset)
+    assert !mapping.should_remove_facl?(mapping.dataset)
+  end
 end
