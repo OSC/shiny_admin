@@ -169,13 +169,8 @@ class Mapping < ActiveRecord::Base
     end
 
     for required_permission in required_permissions do
-      unless app_facl.allow?(principle: ood_user, permission: required_permission)
-        return false
-      end
-
-      unless dataset_facl.allow?(principle: ood_user, permission: required_permission)
-        return false
-      end
+      return false unless app_facl.allow?(principle: ood_user, permission: required_permission)
+      return false unless dataset_facl.allow?(principle: ood_user, permission: required_permission)
     end
 
     # Everything went well so return true
