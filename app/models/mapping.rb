@@ -6,14 +6,15 @@ require 'yaml/store'
 class Mapping < ActiveRecord::Base
   attr_accessor :save_message
   validates :user, :app, :dataset, presence: true
-  YAML_FILE_PATH = Pathname.new(ENV['SHARED_APPS_ROOT']).expand_path().join('mappings.yaml')
-  APP_ROOT = Pathname.new(ENV['SHARED_APPS_ROOT']).expand_path()
-  FACL_USER_DOMAIN = ENV['FACL_USER_DOMAIN']
+  validate :dataset_path_must_exist
+  validates_uniqueness_of :user, scope: [:user, :app], message: "Unable to create a second mapping between user and app."
 
+  # Type dataset as a Pathname
   def dataset
     Pathname.new(super)
   end
 
+  # Type app as a Pathname
   def app
     Pathname.new(super)
   end
@@ -33,7 +34,7 @@ class Mapping < ActiveRecord::Base
       mappings << mapping_as_hash
     end
 
-    store = YAML::Store.new(YAML_FILE_PATH)
+    store = YAML::Store.new(Configuration.yaml_file_path)
 
     store.transaction do
       store[:mappings] = mappings
@@ -51,6 +52,7 @@ class Mapping < ActiveRecord::Base
     {:app => app, :user => user, :dataset => dataset, :extensions => extensions}
   end
 
+  # Custom destructor
   def self.destroy_and_remove_facls(id)
     begin
       mapping = find(id)
@@ -65,13 +67,25 @@ class Mapping < ActiveRecord::Base
       @save_message = 'Unable to destroy mapping because ' + e.to_s
 
       return false
+    rescue ActiveRecord::RecordNotFound  # User is probably mashing the delete
+      return false
     end
+  end
+
+  # Create a user readable string from the error.messages hash
+  def format_error_messages
+    @save_message = errors.messages.map {|_, message| message}.join(' ')
   end
 
   # Custom save method
   def save_and_set_facls
+    unless valid?
+      format_error_messages
+      return false
+    end
+
     begin
-      success = save
+      success = save(:validate => false)
 
       add_rx_facl(app)
       add_rx_facl(dataset)
@@ -100,7 +114,7 @@ class Mapping < ActiveRecord::Base
   def add_rx_facl(pathname)
     return unless should_add_facl?(pathname)
 
-    entry = build_facl_entry_for_user(user, FACL_USER_DOMAIN)
+    entry = build_facl_entry_for_user(user, Configuration.facl_user_domain)
     OodSupport::ACLs::Nfs4ACL.add_facl(path: pathname, entry: entry)
   end
 
@@ -125,7 +139,7 @@ class Mapping < ActiveRecord::Base
   def remove_rx_facl(pathname)
     return unless should_remove_facl?(pathname)
 
-    entry = build_facl_entry_for_user(user, FACL_USER_DOMAIN)
+    entry = build_facl_entry_for_user(user, Configuration.facl_user_domain)
     OodSupport::ACLs::Nfs4ACL.rem_facl(path: pathname, entry: entry)
   end
 
@@ -146,7 +160,7 @@ class Mapping < ActiveRecord::Base
   def rx_facl_exists?(pathname)
     begin
       acl = OodSupport::ACLs::Nfs4ACL.get_facl(path: pathname)
-      expected = build_facl_entry_for_user(user, FACL_USER_DOMAIN)
+      expected = build_facl_entry_for_user(user, Configuration.facl_user_domain)
 
       return acl.entries.include?(expected)
     rescue
@@ -175,5 +189,10 @@ class Mapping < ActiveRecord::Base
 
     # Everything went well so return true
     return true
+  end
+
+  # Validator for dataset
+  def dataset_path_must_exist
+    errors.add(:base, "Dataset must exist.") unless dataset.exist?
   end
 end

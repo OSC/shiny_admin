@@ -55,15 +55,17 @@ class MappingTest < ActiveSupport::TestCase
 
   def test_facls_are_not_removed_if_similar_mappings_exist
     mapping_a = Mapping.new(user: 'efranz', app: @existent_app_path_00, dataset: @existent_ds_path_00)
-    mapping_a.save
+    assert mapping_a.save
 
-    mapping_b = Mapping.new(user: 'efranz', app: @existent_app_path_00, dataset: @existent_app_path_01)
-    mapping_b.save
+    mapping_b = Mapping.new(user: 'efranz', app: @existent_app_path_01, dataset: @existent_ds_path_00)
+    assert mapping_b.save
 
     mapping_b.expects(:rx_facl_exists?).returns(true).twice
 
-    assert !mapping_b.should_remove_facl?(mapping_b.app)
-    assert mapping_b.should_remove_facl?(mapping_b.dataset)
+    # The app-user mapping is unique
+    assert mapping_b.should_remove_facl?(mapping_b.app)
+    # There are multiple instances of the same dataset
+    assert !mapping_b.should_remove_facl?(mapping_b.dataset)
   end
 
   def test_facls_are_removed_if_no_similar_mappings_exist

@@ -88,6 +88,14 @@ class ConfigurationSingleton
     Pathname.new(ENV["DATABASE_PATH"] || dataroot.join('production.sqlite3'))
   end
 
+  def facl_user_domain
+    ENV['FACL_USER_DOMAIN']
+  end
+
+  def yaml_file_path
+    Pathname.new(ENV['SHARED_APPS_ROOT']).expand_path().join('mappings.yaml')
+  end
+
   private
 
   # The environment
