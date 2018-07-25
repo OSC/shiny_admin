@@ -13,18 +13,11 @@ module MappingsHelper
 
   # Get a list of the various Shiny apps
   def app_list
-    glob_results = Dir.glob(
-      File.join File.expand_path(
-        ENV['APP_PROJECT_SPACE']
-      ), 'bc_shiny_*'
-    )
-
-    # Create a sorted list of just the App directory
-    glob_results.sort
+    Dir.glob( Configuration.shared_apps_root.join('bc_shiny_*')).sort
   end
 
 
-  def get_app_name app_path
+  def get_app_name(app_path)
     URI(app_path).path.split('/').last
   end
 
@@ -34,11 +27,7 @@ module MappingsHelper
   # datasets that have been saved to the database but are stored in nonstandard
   # locations.
   def known_datasets
-    installed_datasets = Dir.glob(
-      File.join File.expand_path(
-        ENV['APP_DATASET_ROOT']
-      ), '*'
-    ).sort
+    installed_datasets = Dir.glob(Configuration.app_dataset_root.join('*')).sort
 
     # Take the union of the two sets of datasets
     installed_datasets | Mapping.datasets

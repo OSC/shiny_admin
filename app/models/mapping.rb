@@ -1,15 +1,25 @@
 require 'ood_support'
+require 'pathname'
 require 'yaml/store'
+
 
 class Mapping < ActiveRecord::Base
   attr_accessor :save_message
+  validates :user, :app, :dataset, presence: true
+  validate :dataset_path_must_exist
+  validates_uniqueness_of :user, scope: [:user, :app], message: "Unable to create a second mapping between user and app."
 
-  YAML_FILE_PATH = File.join(ENV['APP_PROJECT_SPACE'], 'mappings.yaml')
-
-  [:user, :app, :dataset].each do |field|
-    validates field, presence: true
+  # Type dataset as a Pathname
+  def dataset
+    Pathname.new(super)
   end
 
+  # Type app as a Pathname
+  def app
+    Pathname.new(super)
+  end
+
+  # @return [Array<String>]
   def self.datasets
     select(:dataset).distinct.order(:dataset).pluck(:dataset)
   end
@@ -17,20 +27,39 @@ class Mapping < ActiveRecord::Base
   def self.dump_to_yaml
     mappings = []
     Mapping.find_each do |mapping|
-      mappings << mapping.to_hash
+      mapping_as_hash = mapping.to_hash
+      mapping_as_hash[:app] = mapping_as_hash[:app].to_s
+      mapping_as_hash[:dataset] = mapping_as_hash[:dataset].to_s
+
+      mappings << mapping_as_hash
     end
 
-    store = YAML::Store.new(YAML_FILE_PATH)
+    store = YAML::Store.new(Configuration.yaml_file_path)
 
     store.transaction do
       store[:mappings] = mappings
     end
   end
 
+  # Ensure that a user can use a given mapping
+  # @return [Boolean]
+  def is_still_valid?
+    return app.exist? && dataset.exist? && user_has_permissions_on_both?
+  end
+
+  # @return [Hash]
+  def to_hash
+    {:app => app, :user => user, :dataset => dataset, :extensions => extensions}
+  end
+
+  # Custom destructor
   def self.destroy_and_remove_facls(id)
     begin
       mapping = find(id)
+      mapping.remove_rx_facl(mapping.dataset)
+      mapping.remove_rx_facl(mapping.app)
       mapping.destroy
+      dump_to_yaml
       @save_message = 'Mapping successfully destroyed.'
 
       return true
@@ -38,32 +67,34 @@ class Mapping < ActiveRecord::Base
       @save_message = 'Unable to destroy mapping because ' + e.to_s
 
       return false
+    rescue ActiveRecord::RecordNotFound  # User is probably mashing the delete
+      return false
     end
   end
 
-  def is_still_valid?
-    app_exists = File.directory?(app_full_path)
-    dataset_exists = File.directory?(dataset)
-
-    return app_exists && dataset_exists && user_has_permissions_on_both
+  # Create a user readable string from the error.messages hash
+  def format_error_messages
+    @save_message = errors.messages.map {|_, message| message}.join(' ')
   end
 
-  def app_full_path
-    File.join(ENV['APP_PROJECT_SPACE'], app)
-  end
-
-  def to_hash
-    {:app => app, :user => user, :dataset => dataset, :extensions => extensions}
-  end
-
+  # Custom save method
   def save_and_set_facls
+    unless valid?
+      format_error_messages
+      return false
+    end
+
     begin
-      success = save
+      success = save(:validate => false)
+
+      add_rx_facl(app)
+      add_rx_facl(dataset)
+      Mapping.dump_to_yaml
       @save_message = 'Mapping successfully created.'
 
       return true
     rescue ActiveRecord::RecordNotUnique => e
-      @save_message = "Unable to create duplicate mapping between #{user}, #{app} and #{dataset}"
+      @save_message = "Unable to create duplicate mapping between #{user}, #{app}, and #{dataset}"
       
       return false
     rescue OodSupport::InvalidPath, OodSupport::BadExitCode => e
@@ -73,68 +104,43 @@ class Mapping < ActiveRecord::Base
     end
   end
 
-  # Handle FACL setting / removal
-
-  before_save do |mapping|
-    # Short circuit if the admin user cannot set FACLS
-    if can_change_facls?(mapping.dataset)
-      errors = add_user_facls(mapping)
-      unless errors.nil?
-        raise errors
-      end
-    end
+  # @return [Boolean]
+  def should_add_facl?(pathname)
+    # Calling owned first protects rx_facl_exists? from throwing InvalidPath
+    pathname.owned? && ! rx_facl_exists?(pathname)
   end
 
-  before_destroy do |mapping|
-    # Short circuit if the admin user cannot set FACLS
-    if can_change_facls?(mapping.dataset)
-      errors = remove_user_facls(mapping)
-      unless errors.nil?
-        raise errors
-      end
-    end
+  # Idempotently add a RX entry to the ACL for a file
+  def add_rx_facl(pathname)
+    return unless should_add_facl?(pathname)
+
+    entry = build_facl_entry_for_user(user, Configuration.facl_user_domain)
+    OodSupport::ACLs::Nfs4ACL.add_facl(path: pathname, entry: entry)
   end
 
-  # Update the YAML Dump
-
-  after_create do |mapping|
-    Mapping.dump_to_yaml
+  # Check if pathname / user combination occurs once or less in the database
+  # @return [Boolean] 
+  def pathname_uniq_for_user?(pathname)    
+    Mapping.where(
+      '(app = ? OR dataset = ?) AND user = ?',
+      pathname.to_s, pathname.to_s, user
+    ).count <= 1
   end
 
-
-  after_destroy do |mapping|
-    Mapping.dump_to_yaml
+  # @return [Boolean]
+  def should_remove_facl?(pathname)
+    pathname.owned? && rx_facl_exists?(pathname) && pathname_uniq_for_user?(pathname)
   end
 
+  # Conditionally remove RX FACLs
+  #
+  # Remove only if file exists, is owned, entry exists, user + (dataset, app)
+  # combination is last in database
+  def remove_rx_facl(pathname)
+    return unless should_remove_facl?(pathname)
 
-  private
-
-  # Check whether a user has read/execute permissions on the app and dataset directories
-  # @return [Boolean] does user have correct permissions?
-  def user_has_permissions_on_both
-    ood_user = OodSupport::User.new(user)
-    required_permissions = [:r, :x]
-
-    app_acl = OodSupport::ACLs::Nfs4ACL.get_facl(path: app_full_path)
-    dataset_acl = nil
-    begin
-      dataset_acl = OodSupport::ACLs::Nfs4ACL.get_facl(path: dataset)
-    rescue OodSupport::InvalidPath, OodSupport::BadExitCode
-      return false
-    end
-
-    for required_permission in required_permissions do
-      unless app_acl.allow?(principle: ood_user, permission: required_permission)
-        return false
-      end
-
-      unless dataset_acl.allow?(principle: ood_user, permission: required_permission)
-        return false
-      end
-    end
-
-    # Everything went well so return true
-    return true
+    entry = build_facl_entry_for_user(user, Configuration.facl_user_domain)
+    OodSupport::ACLs::Nfs4ACL.rem_facl(path: pathname, entry: entry)
   end
 
   # Build FACL for user and domain combination
@@ -149,63 +155,44 @@ class Mapping < ActiveRecord::Base
     )
   end
 
-  # Determine if FACLs can be set by the admin user
-  #
-  # Data sets may be stored in non-standard locations, and oqwned by users
-  # other than the admin user. In the case of a non-owned dataset a mapping
-  # may be valid, but the admin user will not be able to set FACLS, and
-  # should not try.
-  def can_change_facls?(path)
-    owns = false
+  # Check if a RX ACL entry exists on pathname
+  # @return [Boolean]
+  def rx_facl_exists?(pathname)
     begin
-      owns = File.stat(path).owned?
+      acl = OodSupport::ACLs::Nfs4ACL.get_facl(path: pathname)
+      expected = build_facl_entry_for_user(user, Configuration.facl_user_domain)
+
+      return acl.entries.include?(expected)
     rescue
+      return false
     end
-
-    owns
   end
 
-  # Add user FACLs to app and dataset
-  # @return errors [Exception]
-  def add_user_facls(mapping)
-    absolute_app_path = File.join(
-      File.expand_path(ENV['APP_PROJECT_SPACE']),
-      mapping.app
-    )
+  # Check whether a user has read/execute permissions on the app and dataset directories
+  # @return [Boolean] does user have correct permissions?
+  def user_has_permissions_on_both?
+    ood_user = OodSupport::User.new(user)
+    required_permissions = [:r, :x]
 
-    # FIXME using the environment for FACL_USER_DOMAIN is expedient, but doesn't feel good
-    entry = build_facl_entry_for_user(mapping.user, ENV['FACL_USER_DOMAIN'])
-    errors = nil
-    # Consider doing this in a transactional manner: everything succeeds or it all gets rolled back
+    app_facl = OodSupport::ACLs::Nfs4ACL.get_facl(path: app)
+    dataset_facl = nil
     begin
-      acl = OodSupport::ACLs::Nfs4ACL.add_facl(path: absolute_app_path, entry: entry)
-      acl = OodSupport::ACLs::Nfs4ACL.add_facl(path: mapping.dataset, entry: entry)
-    rescue OodSupport::InvalidPath, OodSupport::BadExitCode => e
-      errors = e
+      dataset_facl = OodSupport::ACLs::Nfs4ACL.get_facl(path: dataset)
+    rescue OodSupport::InvalidPath, OodSupport::BadExitCode
+      return false
     end
 
-    return errors
+    for required_permission in required_permissions do
+      return false unless app_facl.allow?(principle: ood_user, permission: required_permission)
+      return false unless dataset_facl.allow?(principle: ood_user, permission: required_permission)
+    end
+
+    # Everything went well so return true
+    return true
   end
 
-  # Remove FACLS for user from app and dataset
-  def remove_user_facls(mapping)
-    absolute_app_path = File.join(
-      File.expand_path(
-        ENV['APP_PROJECT_SPACE']
-      ),
-      mapping.app
-    )
-
-    entry = build_facl_entry_for_user(mapping.user, ENV['FACL_USER_DOMAIN'])
-    errors = nil
-
-    begin
-      OodSupport::ACLs::Nfs4ACL.rem_facl(path: absolute_app_path, entry: entry)
-      OodSupport::ACLs::Nfs4ACL.rem_facl(path: dataset, entry: entry)
-    rescue OodSupport::InvalidPath, OodSupport::BadExitCode => e
-      errors = e
-    end
-
-    return errors
+  # Validator for dataset
+  def dataset_path_must_exist
+    errors.add(:base, "Dataset must exist.") unless dataset.exist?
   end
 end

@@ -14,7 +14,7 @@
   <%=  Mapping.find_each do |mapping| %>
     <tr>
       <td><%= mapping.user %></td>
-      <td><%= mapping.app %></td>
+      <td><%= mapping.app.split.last %></td>
       <td><%= mapping.dataset %></td>
       <td><%= mapping.is_still_valid? ? fa_icon('check') : fa_icon('exclamation-triangle') %></td>
       <td><%= mapping.updated_at %></td>
