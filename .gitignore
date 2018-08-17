@@ -31,3 +31,5 @@
 
 # Do not version the dependencies
 /vendor/bundle
+
+._*
