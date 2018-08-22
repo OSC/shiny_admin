@@ -46,6 +46,10 @@ class ConfigurationSingleton
     Dotenv.load(*dotenv_files)
   end
 
+  def production?
+    ENV['RAILS_ENV'] == 'production'
+  end
+
   def dataroot
     # copied from OodAppkit::Configuration#set_default_configuration
     # then modified to ensure dataroot is never nil
@@ -86,6 +90,10 @@ class ConfigurationSingleton
   def production_database_path
     # FIXME: add support/handling for DATABASE_URL
     Pathname.new(ENV["DATABASE_PATH"] || dataroot.join('production.sqlite3'))
+  end
+
+  def home
+    Pathname.new(ENV['HOME'])
   end
 
   def facl_user_domain
