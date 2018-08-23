@@ -1,7 +1,8 @@
+require 'etc'
+require 'fileutils'
 require 'ood_support'
 require 'pathname'
 require 'yaml/store'
-require 'fileutils'
 
 
 class Mapping < ActiveRecord::Base
@@ -114,17 +115,17 @@ class Mapping < ActiveRecord::Base
 
   # @return [Boolean]
   def self.has_directory_permission_errors?
-    permission_sensitive_dirs.any?{|directory| !directory_perms_are_775?(directory)}
+    permission_sensitive_dirs.any?{|directory| ! directory_perms_are_775?(directory)}
   end
 
   # @return [Array<String>]
   def self.permission_sensitive_dirs
-    cwd = Configuration.production_database_path.parent
-    home = Configuration.home
-    dirs = [home]
-    while cwd != home
-      dirs << cwd
-      cwd = cwd.parent
+    dirs = []
+
+    Configuration.production_database_path.ascend do |directory|
+      if Etc.getpwuid(directory.stat.uid).name != 'root' and directory.directory?
+        dirs << directory
+      end
     end
 
     dirs.sort

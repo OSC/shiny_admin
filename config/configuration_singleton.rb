@@ -92,10 +92,6 @@ class ConfigurationSingleton
     Pathname.new(ENV["DATABASE_PATH"] || dataroot.join('production.sqlite3'))
   end
 
-  def home
-    Pathname.new(ENV['HOME'])
-  end
-
   def facl_user_domain
     ENV['FACL_USER_DOMAIN']
   end
