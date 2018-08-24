@@ -1,3 +1,5 @@
+require 'etc'
+require 'fileutils'
 require 'ood_support'
 require 'pathname'
 require 'yaml/store'
@@ -41,6 +43,11 @@ class Mapping < ActiveRecord::Base
     end
   end
 
+  def self.ensure_file_mode
+    FileUtils.chmod(0664, Configuration.yaml_file_path)
+    FileUtils.chmod(0664, Configuration.production_database_path)
+  end
+
   # Ensure that a user can use a given mapping
   # @return [Boolean]
   def is_still_valid?
@@ -60,6 +67,7 @@ class Mapping < ActiveRecord::Base
       mapping.remove_rx_facl(mapping.app)
       mapping.destroy
       dump_to_yaml
+      ensure_file_mode
       @save_message = 'Mapping successfully destroyed.'
 
       return true
@@ -90,6 +98,7 @@ class Mapping < ActiveRecord::Base
       add_rx_facl(app)
       add_rx_facl(dataset)
       Mapping.dump_to_yaml
+      Mapping.ensure_file_mode
       @save_message = 'Mapping successfully created.'
 
       return true
@@ -102,6 +111,29 @@ class Mapping < ActiveRecord::Base
       
       return false
     end
+  end
+
+  # @return [Boolean]
+  def self.has_directory_permission_errors?
+    permission_sensitive_dirs.any?{|directory| ! directory_perms_are_775?(directory)}
+  end
+
+  # @return [Array<String>]
+  def self.permission_sensitive_dirs
+    dirs = []
+
+    Configuration.production_database_path.ascend do |directory|
+      if Etc.getpwuid(directory.stat.uid).name != 'root' and directory.directory?
+        dirs << directory
+      end
+    end
+
+    dirs.sort
+  end
+
+  # @return [String]
+  def self.directory_permissions_command
+    permission_sensitive_dirs.map{|directory| "chmod 0775 #{directory.to_s}"}.join(' && ')
   end
 
   # @return [Boolean]
@@ -194,5 +226,11 @@ class Mapping < ActiveRecord::Base
   # Validator for dataset
   def dataset_path_must_exist
     errors.add(:base, "Dataset must exist.") unless dataset.exist?
+  end
+
+  # Directories between $HOME and the configured database directory must be set to 775
+  # @return [Boolean]
+  def self.directory_perms_are_775?(directory)
+    directory.stat.mode.to_s(8).end_with?('775')
   end
 end

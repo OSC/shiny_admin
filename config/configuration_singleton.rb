@@ -46,6 +46,10 @@ class ConfigurationSingleton
     Dotenv.load(*dotenv_files)
   end
 
+  def production?
+    ENV['RAILS_ENV'] == 'production'
+  end
+
   def dataroot
     # copied from OodAppkit::Configuration#set_default_configuration
     # then modified to ensure dataroot is never nil
