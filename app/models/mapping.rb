@@ -43,11 +43,6 @@ class Mapping < ActiveRecord::Base
     end
   end
 
-  def self.ensure_file_mode
-    FileUtils.chmod(0664, Configuration.yaml_file_path)
-    FileUtils.chmod(0664, Configuration.production_database_path)
-  end
-
   # Ensure that a user can use a given mapping
   # @return [Boolean]
   def is_still_valid?
@@ -67,7 +62,6 @@ class Mapping < ActiveRecord::Base
       mapping.remove_rx_facl(mapping.app)
       mapping.destroy
       dump_to_yaml
-      ensure_file_mode
       @save_message = 'Mapping successfully destroyed.'
 
       return true
@@ -98,7 +92,6 @@ class Mapping < ActiveRecord::Base
       add_rx_facl(app)
       add_rx_facl(dataset)
       Mapping.dump_to_yaml
-      Mapping.ensure_file_mode
       @save_message = 'Mapping successfully created.'
 
       return true

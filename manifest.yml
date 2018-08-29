@@ -1,3 +1,4 @@
 name: 'Shiny Admin Tool'
 description: |-
   Shiny Admin Tool facilitates administration of mappings between users, applications and data sets.
+category: 'BISR Admin Tools'

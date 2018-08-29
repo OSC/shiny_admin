@@ -8,7 +8,8 @@ ENV["RAILS_ENV"]               ||= ENV["PASSENGER_APP_ENV"] || "development"
 ENV["RAILS_RELATIVE_URL_ROOT"] ||= ENV["PASSENGER_BASE_URI"]
 
 # if relative url root not set, use default for this app
-ENV['RAILS_RELATIVE_URL_ROOT'] ||= "/pun/sys/shiny_admin" if ENV['RAILS_ENV'] == 'production'
+ENV['RAILS_RELATIVE_URL_ROOT'] ||= "/pun/usr/#{ENV['USER']}/shiny_admin" if ENV['RAILS_ENV'] == 'production'
+
 
 # define application object
 class App
