@@ -122,7 +122,7 @@ class Mapping < ActiveRecord::Base
 
   # @return [String]
   def self.directory_permissions_command
-    permission_sensitive_dirs.map{|directory| "chmod 0775 #{directory.to_s}"}.join(' && ')
+    permission_sensitive_dirs.map{|directory| "chmod 2775 #{directory.to_s}"}.join(' && ')
   end
 
   # @return [Boolean]
