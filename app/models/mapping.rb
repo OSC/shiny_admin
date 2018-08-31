@@ -95,10 +95,6 @@ class Mapping < ActiveRecord::Base
       @save_message = 'Mapping successfully created.'
 
       return true
-    rescue ActiveRecord::RecordNotUnique => e
-      @save_message = "Unable to create duplicate mapping between #{user}, #{app}, and #{dataset}"
-      
-      return false
     rescue OodSupport::InvalidPath, OodSupport::BadExitCode => e
       @save_message = "Unable to set FACLS because " + e.to_s
       
