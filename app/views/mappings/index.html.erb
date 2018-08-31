@@ -1,6 +1,6 @@
 <% if Mapping.has_directory_permission_errors? %>
   <div class="alert alert-danger" role="alert">
-    <div class="panel-body">Warning: certain directories owned by <code>bmiadmin</code> have incorrect permissions which will prevent app and dataset sharing.. As <code>bmiadmin</code> run the following to set the correct permissions:</div>
+    <div class="panel-body">Warning: certain directories owned by <code>bmiadmin</code> have incorrect permissions which will prevent app and dataset sharing. As <code>bmiadmin</code> run the following to set the correct permissions:</div>
     <div class="panel-body"><pre><code><%= Mapping.directory_permissions_command %></code></pre></div>
   </div>
 <% end %>
