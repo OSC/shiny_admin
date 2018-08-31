@@ -1,6 +1,7 @@
 require 'etc'
 require 'fileutils'
 require 'ood_support'
+require 'ostruct'
 require 'pathname'
 require 'yaml/store'
 
@@ -55,21 +56,18 @@ class Mapping < ActiveRecord::Base
   end
 
   # Custom destructor
-  def self.destroy_and_remove_facls(id)
+  def destroy_and_remove_facls
     begin
-      mapping = find(id)
-      mapping.remove_rx_facl(mapping.dataset)
-      mapping.remove_rx_facl(mapping.app)
-      mapping.destroy
-      dump_to_yaml
+      remove_rx_facl(dataset)
+      remove_rx_facl(app)
+      destroy
+      Mapping.dump_to_yaml
       @save_message = 'Mapping successfully destroyed.'
 
       return true
     rescue OodSupport::InvalidPath, OodSupport::BadExitCode => e
       @save_message = 'Unable to destroy mapping because ' + e.to_s
 
-      return false
-    rescue ActiveRecord::RecordNotFound  # User is probably mashing the delete
       return false
     end
   end
@@ -128,7 +126,7 @@ class Mapping < ActiveRecord::Base
   # @return [Boolean]
   def should_add_facl?(pathname)
     # Calling owned first protects rx_facl_exists? from throwing InvalidPath
-    can_modify_facl?(pathname) && ! rx_facl_exists?(pathname)
+    Mapping.can_modify_facl?(pathname) && ! rx_facl_exists?(pathname)
   end
 
   # Idempotently add a RX entry to the ACL for a file
@@ -150,7 +148,7 @@ class Mapping < ActiveRecord::Base
 
   # @return [Boolean]
   def should_remove_facl?(pathname)
-    can_modify_facl?(pathname) && rx_facl_exists?(pathname) && pathname_uniq_for_user?(pathname)
+    Mapping.can_modify_facl?(pathname) && rx_facl_exists?(pathname) && pathname_uniq_for_user?(pathname)
   end
 
   # Conditionally remove RX FACLs
@@ -256,5 +254,16 @@ class Mapping < ActiveRecord::Base
     logger.debug "group_facl_entry_has_C_set?(#{pathname}) == #{result}"
 
     result
+  end
+
+  def self.get_mapping_for_id(id)
+    begin
+      return Mapping.find(id)
+    rescue ActiveRecord::RecordNotFound
+      OpenStruct.new(
+        :destroy_and_remove_facls => false,
+        :save_message => "No mapping exists with id #{id}"
+      )
+    end
   end
 end

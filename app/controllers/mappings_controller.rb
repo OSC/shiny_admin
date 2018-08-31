@@ -24,12 +24,14 @@ class MappingsController < ApplicationController
   end
 
   # POST /mappings
-  def destroy 
-    if Mapping.destroy_and_remove_facls(params[:id])
-      flash[:success] = 'Successfully deleted mapping.'
+  def destroy
+    mapping = Mapping.get_mapping_for_id(params[:id])
+
+    if mapping.destroy_and_remove_facls()
+      flash[:success] = mapping.save_message
       redirect_to action: :index
     else
-      flash[:danger] = 'Unable to delete mapping ' + params[:id]
+      flash[:danger] = mapping.save_message
       redirect_to action: :index
     end
   end
