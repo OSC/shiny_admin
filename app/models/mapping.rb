@@ -8,18 +8,25 @@ require 'yaml/store'
 
 class Mapping < ActiveRecord::Base
   attr_accessor :save_message
-  validates :user, :app, :dataset, presence: true
+  validates :user, :app, :dataset, presence: { message: "A %{attribute} must be selected." }
   validate :dataset_path_must_exist
+  validate :app_path_may_not_be_blank
   validates_uniqueness_of :user, scope: [:user, :app], message: "Unable to create a second mapping between user and app."
+
+  def initialize(params)
+    super(params)
+
+    @save_message = ''
+  end
 
   # Type dataset as a Pathname
   def dataset
-    Pathname.new(super)
+    super ? Pathname.new(super): Pathname.new('')
   end
 
   # Type app as a Pathname
   def app
-    Pathname.new(super)
+    super ? Pathname.new(super): Pathname.new('')
   end
 
   # @return [Array<String>]
@@ -74,7 +81,11 @@ class Mapping < ActiveRecord::Base
 
   # Create a user readable string from the error.messages hash
   def format_error_messages
-    @save_message = errors.messages.map {|_, message| message}.join(' ')
+    @save_message = errors.messages.map do |key, message|
+      return message.join(' ') unless key == :base
+
+      message
+    end.join(' ')
   end
 
   # Custom save method
@@ -135,6 +146,8 @@ class Mapping < ActiveRecord::Base
 
     entry = build_facl_entry_for_user(user, Configuration.facl_user_domain)
     OodSupport::ACLs::Nfs4ACL.add_facl(path: pathname, entry: entry)
+
+    logger.debug "add_rx_facl(#{pathname}) succeeded for #{user} and #{pathname.to_s}"
   end
 
   # Check if pathname / user combination occurs once or less in the database
@@ -160,6 +173,8 @@ class Mapping < ActiveRecord::Base
 
     entry = build_facl_entry_for_user(user, Configuration.facl_user_domain)
     OodSupport::ACLs::Nfs4ACL.rem_facl(path: pathname, entry: entry)
+
+    logger.debug "remove_rx_facl(#{pathname}) succeeded for #{user} and #{pathname.to_s}"
   end
 
   # Build FACL for user and domain combination
@@ -213,6 +228,11 @@ class Mapping < ActiveRecord::Base
   # Validator for dataset
   def dataset_path_must_exist
     errors.add(:base, "Dataset must exist.") unless dataset.exist?
+  end
+
+  # Validator for app
+  def app_path_may_not_be_blank
+    errors.add(:base, "You must select an app.") unless app.exist?
   end
 
   # Directories between $HOME and the configured database directory must be set to 775

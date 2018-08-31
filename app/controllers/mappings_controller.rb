@@ -3,6 +3,7 @@ require 'ood_support'
 
 class MappingsController < ApplicationController
   def index
+    @directory_permissions_command = Mapping.directory_permissions_command
   end
 
 
@@ -18,7 +19,7 @@ class MappingsController < ApplicationController
       flash[:success] = @mapping.save_message
       redirect_to action: :index
     else
-      flash[:warning] = 'Unable to create new mapping. ' + @mapping.save_message
+      flash[:warning] = 'Unable to create new mapping. ' + @mapping.format_error_messages
       redirect_to new_mapping_path, locals: params
     end
   end
