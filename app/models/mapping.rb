@@ -128,7 +128,7 @@ class Mapping < ActiveRecord::Base
   # @return [Boolean]
   def should_add_facl?(pathname)
     # Calling owned first protects rx_facl_exists? from throwing InvalidPath
-    pathname.owned? && ! rx_facl_exists?(pathname)
+    can_modify_facl?(pathname) && ! rx_facl_exists?(pathname)
   end
 
   # Idempotently add a RX entry to the ACL for a file
@@ -150,7 +150,7 @@ class Mapping < ActiveRecord::Base
 
   # @return [Boolean]
   def should_remove_facl?(pathname)
-    pathname.owned? && rx_facl_exists?(pathname) && pathname_uniq_for_user?(pathname)
+    can_modify_facl?(pathname) && rx_facl_exists?(pathname) && pathname_uniq_for_user?(pathname)
   end
 
   # Conditionally remove RX FACLs
@@ -221,5 +221,40 @@ class Mapping < ActiveRecord::Base
   # @return [Boolean]
   def self.directory_perms_are_775?(directory)
     directory.stat.mode.to_s(8).end_with?('775')
+  end
+
+  # Checks to see if FACLs are modifiable by the user
+  #
+  # Note that this check assumes that no negative permissions have been set.
+  #
+  # @return [Boolean]
+  def self.can_modify_facl?(pathname)
+    pathname.exist? && ( pathname.owned? || group_facl_entry_has_C_set?(pathname) )
+  end
+
+  # Get the group owner's name
+  # @return [String]
+  def self.get_groupname_for_pathname(pathname)
+    Etc.getgrgid(pathname.stat.gid).name
+  end
+
+  # Check if pathname is owned by the admin_group
+  # @return [Boolean]
+  def self.app_has_correct_group_ownership?(pathname)
+    get_groupname_for_pathname(pathname) == Configuration.admin_group
+  end
+
+  # Does the app have permission modification enabled for the GROUP principle
+  # @return [Boolean]
+  def self.group_facl_entry_has_C_set?(pathname)
+    result = OodSupport::ACLs::Nfs4ACL.get_facl(
+      path: pathname
+    ).entries.select{
+      |entry| entry.principle == 'GROUP'
+    }.first.permissions.include?(:C)
+
+    logger.debug "group_facl_entry_has_C_set?(#{pathname}) == #{result}"
+
+    result
   end
 end
