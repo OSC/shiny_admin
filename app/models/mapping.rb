@@ -21,12 +21,12 @@ class Mapping < ActiveRecord::Base
 
   # Type dataset as a Pathname
   def dataset
-    super ? Pathname.new(super): Pathname.new('')
+    Pathname.new(super.to_s)
   end
 
   # Type app as a Pathname
   def app
-    super ? Pathname.new(super): Pathname.new('')
+    Pathname.new(super.to_s)
   end
 
   # @return [Array<String>]
@@ -55,6 +55,16 @@ class Mapping < ActiveRecord::Base
   # @return [Boolean]
   def is_still_valid?
     return app.exist? && dataset.exist? && user_has_permissions_on_both?
+  end
+
+  # Explain why a given mapping is not valid
+  # @return [String]
+  def reason_invalid
+    [
+      app.exist? ? nil : "#{app} is no longer visible on the file system.",
+      dataset.exist? ? nil : "#{dataset} is no longer visible on the file system.",
+      user_has_permissions_on_both? ? nil : "User #{user} does not have read/write permissions on both `#{app}` and `#{dataset}`."
+    ].select{ |value| ! value.nil? }.join(' ')
   end
 
   # @return [Hash]
@@ -86,6 +96,16 @@ class Mapping < ActiveRecord::Base
 
       message
     end.join(' ')
+  end
+
+  # Builds an Array of apps that need their permissions changed to include the C attribute for GROUP
+  #
+  # An example of acceptable FACL entry for GROUP:
+  #   A:g:GROUP@:rwaDxtTnNcCy
+  #
+  # @return [Pathname]
+  def self.installed_apps_with_busted_permissions?
+    ApplicationController.helpers.app_list.select { |app| ! can_modify_facl?(app) }
   end
 
   # Custom save method
@@ -197,7 +217,7 @@ class Mapping < ActiveRecord::Base
       expected = build_facl_entry_for_user(user, Configuration.facl_user_domain)
 
       return acl.entries.include?(expected)
-    rescue
+    rescue OodSupport::InvalidPath, OodSupport::BadExitCode
       return false
     end
   end
@@ -208,9 +228,10 @@ class Mapping < ActiveRecord::Base
     ood_user = OodSupport::User.new(user)
     required_permissions = [:r, :x]
 
-    app_facl = OodSupport::ACLs::Nfs4ACL.get_facl(path: app)
+    app_facl = nil
     dataset_facl = nil
     begin
+      app_facl = OodSupport::ACLs::Nfs4ACL.get_facl(path: app)
       dataset_facl = OodSupport::ACLs::Nfs4ACL.get_facl(path: dataset)
     rescue OodSupport::InvalidPath, OodSupport::BadExitCode
       return false
@@ -244,10 +265,12 @@ class Mapping < ActiveRecord::Base
   # Checks to see if FACLs are modifiable by the user
   #
   # Note that this check assumes that no negative permissions have been set.
+  # Also we are not using an ownership check since that could mask problems
+  # with permissions that would impact other users.
   #
   # @return [Boolean]
   def self.can_modify_facl?(pathname)
-    pathname.exist? && ( pathname.owned? || group_facl_entry_has_C_set?(pathname) )
+    pathname.exist? && group_facl_entry_has_C_set?(pathname)
   end
 
   # Get the group owner's name
@@ -265,11 +288,15 @@ class Mapping < ActiveRecord::Base
   # Does the app have permission modification enabled for the GROUP principle
   # @return [Boolean]
   def self.group_facl_entry_has_C_set?(pathname)
-    result = OodSupport::ACLs::Nfs4ACL.get_facl(
-      path: pathname
-    ).entries.select{
-      |entry| entry.principle == 'GROUP'
-    }.first.permissions.include?(:C)
+    result = false
+    begin
+      result = OodSupport::ACLs::Nfs4ACL.get_facl(
+        path: pathname
+      ).entries.select{
+        |entry| entry.principle == 'GROUP'
+      }.first.permissions.include?(:C)
+    rescue OodSupport::InvalidPath, OodSupport::BadExitCode
+    end
 
     logger.debug "group_facl_entry_has_C_set?(#{pathname}) == #{result}"
 
