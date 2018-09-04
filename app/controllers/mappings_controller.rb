@@ -16,23 +16,23 @@ class MappingsController < ApplicationController
     @mapping = Mapping.new(mapping_params)
 
     if @mapping.save_and_set_facls
-      flash[:success] = @mapping.save_message
+      flash[:success] = 'Mapping successfully created.'
       redirect_to action: :index
     else
-      flash[:warning] = 'Unable to create new mapping. ' + @mapping.format_error_messages
-      redirect_to new_mapping_path, locals: params
+      flash[:warning] = 'Unable to create new mapping. ' + @mapping.errors.full_messages.join(' ')
+      render :new
     end
   end
 
   # POST /mappings
   def destroy
-    mapping = Mapping.get_mapping_for_id(params[:id])
+    @mapping = Mapping.find(params[:id])
 
-    if mapping.destroy_and_remove_facls()
-      flash[:success] = mapping.save_message
+    if @mapping.destroy_and_remove_facls()
+      flash[:success] = @mapping.save_message
       redirect_to action: :index
     else
-      flash[:danger] = mapping.save_message
+      flash[:danger] = 'Unable to remove mapping. ' + @mapping.errors.full_messages.join(' ')
       redirect_to action: :index
     end
   end

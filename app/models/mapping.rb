@@ -7,11 +7,11 @@ require 'yaml/store'
 
 
 class Mapping < ActiveRecord::Base
-  attr_accessor :save_message
+  attr_accessor :save_message, :dataset_non_std_location_value
   validates :user, :app, :dataset, presence: { message: "A %{attribute} must be selected." }
   validate :dataset_path_must_exist
   validate :app_path_may_not_be_blank
-  validates_uniqueness_of :user, scope: [:user, :app], message: "Unable to create a second mapping between user and app."
+  validates_uniqueness_of :user, scope: [:user, :app], message: "may only be mapped once to a given app."
 
   def initialize(params)
     super(params)
@@ -301,16 +301,5 @@ class Mapping < ActiveRecord::Base
     logger.debug "group_facl_entry_has_C_set?(#{pathname}) == #{result}"
 
     result
-  end
-
-  def self.get_mapping_for_id(id)
-    begin
-      return Mapping.find(id)
-    rescue ActiveRecord::RecordNotFound
-      OpenStruct.new(
-        :destroy_and_remove_facls => false,
-        :save_message => "No mapping exists with id #{id}"
-      )
-    end
   end
 end
