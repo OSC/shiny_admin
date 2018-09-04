@@ -1,4 +1,4 @@
-require 'uri'
+require 'pathname'
 
 module MappingsHelper
   def user_list
@@ -17,7 +17,7 @@ module MappingsHelper
 
   # Get a list of the various Shiny apps
   def app_list
-    Dir.glob( Configuration.shared_apps_root.join('bc_shiny_*')).sort
+    Dir.glob( Configuration.shared_apps_root.join('bc_shiny_*')).sort.map{|path| Pathname.new(path)}
   end
 
   def app_list_help
@@ -26,7 +26,7 @@ module MappingsHelper
 
 
   def get_app_name(app_path)
-    URI(app_path).path.split('/').last
+    app_path.basename
   end
 
 
