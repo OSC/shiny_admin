@@ -7,7 +7,7 @@ require 'yaml/store'
 
 
 class Mapping < ActiveRecord::Base
-  attr_accessor :save_message, :dataset_non_std_location_value
+  attr_accessor :dataset_non_std_location_value
   validates :user, :app, :dataset, presence: { message: "A %{attribute} must be selected." }
   validate :dataset_path_must_exist
   validate :app_path_may_not_be_blank
@@ -15,8 +15,6 @@ class Mapping < ActiveRecord::Base
 
   def initialize(params)
     super(params)
-
-    @save_message = ''
   end
 
   # Type dataset as a Pathname
@@ -79,23 +77,13 @@ class Mapping < ActiveRecord::Base
       remove_rx_facl(app)
       destroy
       Mapping.dump_to_yaml
-      @save_message = 'Mapping successfully destroyed.'
 
       return true
     rescue OodSupport::InvalidPath, OodSupport::BadExitCode => e
-      @save_message = 'Unable to destroy mapping because ' + e.to_s
+      @errors[:base] << 'Unable to destroy mapping because ' + e.to_s
 
       return false
     end
-  end
-
-  # Create a user readable string from the error.messages hash
-  def format_error_messages
-    @save_message = errors.messages.map do |key, message|
-      return message.join(' ') unless key == :base
-
-      message
-    end.join(' ')
   end
 
   # Builds an Array of apps that need their permissions changed to include the C attribute for GROUP
@@ -111,7 +99,6 @@ class Mapping < ActiveRecord::Base
   # Custom save method
   def save_and_set_facls
     unless valid?
-      format_error_messages
       return false
     end
 
@@ -121,11 +108,10 @@ class Mapping < ActiveRecord::Base
       add_rx_facl(app)
       add_rx_facl(dataset)
       Mapping.dump_to_yaml
-      @save_message = 'Mapping successfully created.'
 
       return true
     rescue OodSupport::InvalidPath, OodSupport::BadExitCode => e
-      @save_message = "Unable to set FACLS because " + e.to_s
+      @errors[:base] << "Unable to set FACLS because " + e.to_s
       
       return false
     end

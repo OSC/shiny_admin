@@ -26,10 +26,16 @@ class MappingsController < ApplicationController
 
   # POST /mappings
   def destroy
-    @mapping = Mapping.find(params[:id])
+    begin
+      @mapping = Mapping.find(params[:id])
+    rescue ActiveRecord::RecordNotFound
+      flash[:warning] = "Unable to find mapping #{params[:id]} to remove it."
+      redirect_to action: :index
+      return
+    end
 
     if @mapping.destroy_and_remove_facls()
-      flash[:success] = @mapping.save_message
+      flash[:success] = 'Mapping successfully removed.'
       redirect_to action: :index
     else
       flash[:danger] = 'Unable to remove mapping. ' + @mapping.errors.full_messages.join(' ')
