@@ -1,3 +1,4 @@
+require 'etc'
 require 'pathname'
 
 module MappingsHelper
@@ -43,5 +44,13 @@ module MappingsHelper
 
   def known_datasets_help
    "Known datasets include files or directories under #{Configuration.app_dataset_root.to_s} and arbitrary paths already added to this database" 
+  end
+
+  # Attempt to get a full name for the user
+  # @return [String]
+  def full_username(user)
+    full_name = Etc.getpwnam(user).gecos.strip
+
+    full_name.empty? ? user : full_name
   end
 end
