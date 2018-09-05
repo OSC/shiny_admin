@@ -3,16 +3,15 @@ require 'pathname'
 
 module MappingsHelper
   def user_list
-    users_from_group = ENV['USERS_FROM_GROUP']
-    result = `getent group #{users_from_group}`
+    Etc.getgrnam(Configuration.users_from_group).mem.sort
+  end
 
-    # example output
-    #    "wiagstf:*:5362:mrodgers,efranz\n"
-    result.strip.split(':')[3].split(',').sort
+  def user_select_list
+    user_list.map { |user| [display_username(user), user] }
   end
 
   def user_list_help
-    "Users list is built from users in group: #{ENV['USERS_FROM_GROUP']}"
+    "Users list is built from users in group: #{Configuration.users_from_group}"
   end
 
 
@@ -48,9 +47,10 @@ module MappingsHelper
 
   # Attempt to get a full name for the user
   # @return [String]
-  def full_username(user)
+  def display_username(user)
     full_name = Etc.getpwnam(user).gecos.strip
+    full_name = full_name.empty? ? user : full_name
 
-    full_name.empty? ? user : full_name
+    "#{full_name} - #{user}"
   end
 end

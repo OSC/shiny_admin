@@ -19,21 +19,14 @@ class MappingsController < ApplicationController
       flash[:success] = 'Mapping successfully created.'
       redirect_to action: :index
     else
-      flash[:warning] = 'Unable to create new mapping. ' + @mapping.errors.full_messages.join(' ')
+      flash.now[:warning] = 'Unable to create new mapping. ' + @mapping.errors.full_messages.join(' ')
       render :new
     end
   end
 
   # POST /mappings
   def destroy
-    begin
-      @mapping = Mapping.find(params[:id])
-    rescue ActiveRecord::RecordNotFound
-      flash[:warning] = "Unable to find mapping #{params[:id]} to remove it."
-      redirect_to action: :index
-      return
-    end
-
+    @mapping = Mapping.find(params[:id])
     if @mapping.destroy_and_remove_facls()
       flash[:success] = 'Mapping successfully removed.'
       redirect_to action: :index
@@ -41,6 +34,9 @@ class MappingsController < ApplicationController
       flash[:danger] = 'Unable to remove mapping. ' + @mapping.errors.full_messages.join(' ')
       redirect_to action: :index
     end
+  rescue ActiveRecord::RecordNotFound
+    flash[:warning] = "Unable to find mapping #{params[:id]} to remove it."
+    redirect_to action: :index
   end
 
 

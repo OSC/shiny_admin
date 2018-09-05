@@ -13,10 +13,6 @@ class Mapping < ActiveRecord::Base
   validate :app_path_may_not_be_blank
   validates_uniqueness_of :user, scope: [:user, :app], message: "may only be mapped once to a given app."
 
-  def initialize(params)
-    super(params)
-  end
-
   # Type dataset as a Pathname
   def dataset
     Pathname.new(super.to_s)
@@ -52,7 +48,7 @@ class Mapping < ActiveRecord::Base
   # Ensure that a user can use a given mapping
   # @return [Boolean]
   def is_still_valid?
-    return app.exist? && dataset.exist? && user_has_permissions_on_both?
+    app.exist? && dataset.exist? && user_has_permissions_on_both?
   end
 
   # Explain why a given mapping is not valid
@@ -98,9 +94,7 @@ class Mapping < ActiveRecord::Base
 
   # Custom save method
   def save_and_set_facls
-    unless valid?
-      return false
-    end
+    return false unless valid?
 
     begin
       success = save(:validate => false)
@@ -153,7 +147,7 @@ class Mapping < ActiveRecord::Base
     entry = build_facl_entry_for_user(user, Configuration.facl_user_domain)
     OodSupport::ACLs::Nfs4ACL.add_facl(path: pathname, entry: entry)
 
-    logger.debug "add_rx_facl(#{pathname}) succeeded for #{user} and #{pathname.to_s}"
+    logger.debug { "add_rx_facl(#{pathname}) succeeded for #{user} and #{pathname.to_s}" }
   end
 
   # Check if pathname / user combination occurs once or less in the database
@@ -180,7 +174,7 @@ class Mapping < ActiveRecord::Base
     entry = build_facl_entry_for_user(user, Configuration.facl_user_domain)
     OodSupport::ACLs::Nfs4ACL.rem_facl(path: pathname, entry: entry)
 
-    logger.debug "remove_rx_facl(#{pathname}) succeeded for #{user} and #{pathname.to_s}"
+    logger.debug { "remove_rx_facl(#{pathname}) succeeded for #{user} and #{pathname.to_s}" }
   end
 
   # Build FACL for user and domain combination
@@ -282,9 +276,10 @@ class Mapping < ActiveRecord::Base
         |entry| entry.principle == 'GROUP'
       }.first.permissions.include?(:C)
     rescue OodSupport::InvalidPath, OodSupport::BadExitCode
+      logger.fatal { "Unable to check FACL for #{pathname} - is it on an NFS4 file system?" }
     end
 
-    logger.debug "group_facl_entry_has_C_set?(#{pathname}) == #{result}"
+    logger.debug { "group_facl_entry_has_C_set?(#{pathname}) == #{result}" }
 
     result
   end

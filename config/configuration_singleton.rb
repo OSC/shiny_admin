@@ -96,6 +96,10 @@ class ConfigurationSingleton
     ENV['FACL_USER_DOMAIN']
   end
 
+  def users_from_group
+    ENV['USERS_FROM_GROUP']
+  end
+
   def yaml_file_path
     Pathname.new(ENV['SHARED_APPS_ROOT']).expand_path().join('mappings.yaml')
   end
