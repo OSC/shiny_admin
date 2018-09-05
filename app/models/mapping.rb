@@ -1,7 +1,6 @@
 require 'etc'
 require 'fileutils'
 require 'ood_support'
-require 'ostruct'
 require 'pathname'
 require 'yaml/store'
 
