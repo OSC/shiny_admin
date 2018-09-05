@@ -3,6 +3,7 @@ require 'ood_support'
 
 class MappingsController < ApplicationController
   def index
+    @directory_permissions_command = Mapping.directory_permissions_command
   end
 
 
@@ -15,23 +16,27 @@ class MappingsController < ApplicationController
     @mapping = Mapping.new(mapping_params)
 
     if @mapping.save_and_set_facls
-      flash[:success] = @mapping.save_message
+      flash[:success] = 'Mapping successfully created.'
       redirect_to action: :index
     else
-      flash[:warning] = 'Unable to create new mapping. ' + @mapping.save_message
-      redirect_to new_mapping_path, locals: params
+      flash.now[:warning] = 'Unable to create new mapping. ' + @mapping.errors.full_messages.join(' ')
+      render :new
     end
   end
 
   # POST /mappings
-  def destroy 
-    if Mapping.destroy_and_remove_facls(params[:id])
-      flash[:success] = 'Successfully deleted mapping.'
+  def destroy
+    @mapping = Mapping.find(params[:id])
+    if @mapping.destroy_and_remove_facls()
+      flash[:success] = 'Mapping successfully removed.'
       redirect_to action: :index
     else
-      flash[:danger] = 'Unable to delete mapping ' + params[:id]
+      flash[:danger] = 'Unable to remove mapping. ' + @mapping.errors.full_messages.join(' ')
       redirect_to action: :index
     end
+  rescue ActiveRecord::RecordNotFound
+    flash[:warning] = "Unable to find mapping #{params[:id]} to remove it."
+    redirect_to action: :index
   end
 
 

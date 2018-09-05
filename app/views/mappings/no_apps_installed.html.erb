@@ -1,8 +1,8 @@
 <div class="container">
   <div class="jumbotron">
     <h1 class="display-4">No Apps Installed</h1>
-    <p>Please install one or more apps to <%= ENV['SHARED_APPS_ROOT'] =%>.</p>
-    <p>Datasets should be installed to <%= ENV['APP_DATASET_ROOT'] =%>.</p>
+    <p>Please install one or more apps to <%= Configuration.shared_apps_root =%>.</p>
+    <p>Datasets should be installed to <%= Configuration.app_dataset_root =%>.</p>
   </div>
   <%= link_to 'Back', mappings_path, class: 'btn btn-default' %>
 </div>

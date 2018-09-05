@@ -6,19 +6,20 @@ require 'yaml/store'
 
 
 class Mapping < ActiveRecord::Base
-  attr_accessor :save_message
-  validates :user, :app, :dataset, presence: true
+  attr_accessor :dataset_non_std_location_value
+  validates :user, :app, :dataset, presence: { message: "A %{attribute} must be selected." }
   validate :dataset_path_must_exist
-  validates_uniqueness_of :user, scope: [:user, :app], message: "Unable to create a second mapping between user and app."
+  validate :app_path_may_not_be_blank
+  validates_uniqueness_of :user, scope: [:user, :app], message: "may only be mapped once to a given app."
 
   # Type dataset as a Pathname
   def dataset
-    Pathname.new(super)
+    Pathname.new(super.to_s)
   end
 
   # Type app as a Pathname
   def app
-    Pathname.new(super)
+    Pathname.new(super.to_s)
   end
 
   # @return [Array<String>]
@@ -46,7 +47,17 @@ class Mapping < ActiveRecord::Base
   # Ensure that a user can use a given mapping
   # @return [Boolean]
   def is_still_valid?
-    return app.exist? && dataset.exist? && user_has_permissions_on_both?
+    app.exist? && dataset.exist? && user_has_permissions_on_both?
+  end
+
+  # Explain why a given mapping is not valid
+  # @return [String]
+  def reason_invalid
+    [
+      app.exist? ? nil : "#{app} is no longer visible on the file system.",
+      dataset.exist? ? nil : "#{dataset} is no longer visible on the file system.",
+      user_has_permissions_on_both? ? nil : "User #{user} does not have read/write permissions on both `#{app}` and `#{dataset}`."
+    ].select{ |value| ! value.nil? }.join(' ')
   end
 
   # @return [Hash]
@@ -55,36 +66,34 @@ class Mapping < ActiveRecord::Base
   end
 
   # Custom destructor
-  def self.destroy_and_remove_facls(id)
+  def destroy_and_remove_facls
     begin
-      mapping = find(id)
-      mapping.remove_rx_facl(mapping.dataset)
-      mapping.remove_rx_facl(mapping.app)
-      mapping.destroy
-      dump_to_yaml
-      @save_message = 'Mapping successfully destroyed.'
+      remove_rx_facl(dataset)
+      remove_rx_facl(app)
+      destroy
+      Mapping.dump_to_yaml
 
       return true
     rescue OodSupport::InvalidPath, OodSupport::BadExitCode => e
-      @save_message = 'Unable to destroy mapping because ' + e.to_s
+      @errors[:base] << 'Unable to destroy mapping because ' + e.to_s
 
-      return false
-    rescue ActiveRecord::RecordNotFound  # User is probably mashing the delete
       return false
     end
   end
 
-  # Create a user readable string from the error.messages hash
-  def format_error_messages
-    @save_message = errors.messages.map {|_, message| message}.join(' ')
+  # Builds an Array of apps that need their permissions changed to include the C attribute for GROUP
+  #
+  # An example of acceptable FACL entry for GROUP:
+  #   A:g:GROUP@:rwaDxtTnNcCy
+  #
+  # @return [Pathname]
+  def self.installed_apps_with_busted_permissions?
+    ApplicationController.helpers.app_list.select { |app| ! can_modify_facl?(app) }
   end
 
   # Custom save method
   def save_and_set_facls
-    unless valid?
-      format_error_messages
-      return false
-    end
+    return false unless valid?
 
     begin
       success = save(:validate => false)
@@ -92,15 +101,10 @@ class Mapping < ActiveRecord::Base
       add_rx_facl(app)
       add_rx_facl(dataset)
       Mapping.dump_to_yaml
-      @save_message = 'Mapping successfully created.'
 
       return true
-    rescue ActiveRecord::RecordNotUnique => e
-      @save_message = "Unable to create duplicate mapping between #{user}, #{app}, and #{dataset}"
-      
-      return false
     rescue OodSupport::InvalidPath, OodSupport::BadExitCode => e
-      @save_message = "Unable to set FACLS because " + e.to_s
+      @errors[:base] << "Unable to set FACLS because " + e.to_s
       
       return false
     end
@@ -126,13 +130,13 @@ class Mapping < ActiveRecord::Base
 
   # @return [String]
   def self.directory_permissions_command
-    permission_sensitive_dirs.map{|directory| "chmod 0775 #{directory.to_s}"}.join(' && ')
+    permission_sensitive_dirs.map{|directory| "chmod 2775 #{directory.to_s}"}.join(' && ')
   end
 
   # @return [Boolean]
   def should_add_facl?(pathname)
     # Calling owned first protects rx_facl_exists? from throwing InvalidPath
-    pathname.owned? && ! rx_facl_exists?(pathname)
+    Mapping.can_modify_facl?(pathname) && ! rx_facl_exists?(pathname)
   end
 
   # Idempotently add a RX entry to the ACL for a file
@@ -141,6 +145,8 @@ class Mapping < ActiveRecord::Base
 
     entry = build_facl_entry_for_user(user, Configuration.facl_user_domain)
     OodSupport::ACLs::Nfs4ACL.add_facl(path: pathname, entry: entry)
+
+    logger.debug { "add_rx_facl(#{pathname}) succeeded for #{user} and #{pathname.to_s}" }
   end
 
   # Check if pathname / user combination occurs once or less in the database
@@ -154,7 +160,7 @@ class Mapping < ActiveRecord::Base
 
   # @return [Boolean]
   def should_remove_facl?(pathname)
-    pathname.owned? && rx_facl_exists?(pathname) && pathname_uniq_for_user?(pathname)
+    Mapping.can_modify_facl?(pathname) && rx_facl_exists?(pathname) && pathname_uniq_for_user?(pathname)
   end
 
   # Conditionally remove RX FACLs
@@ -166,6 +172,8 @@ class Mapping < ActiveRecord::Base
 
     entry = build_facl_entry_for_user(user, Configuration.facl_user_domain)
     OodSupport::ACLs::Nfs4ACL.rem_facl(path: pathname, entry: entry)
+
+    logger.debug { "remove_rx_facl(#{pathname}) succeeded for #{user} and #{pathname.to_s}" }
   end
 
   # Build FACL for user and domain combination
@@ -188,7 +196,7 @@ class Mapping < ActiveRecord::Base
       expected = build_facl_entry_for_user(user, Configuration.facl_user_domain)
 
       return acl.entries.include?(expected)
-    rescue
+    rescue OodSupport::InvalidPath, OodSupport::BadExitCode
       return false
     end
   end
@@ -199,9 +207,10 @@ class Mapping < ActiveRecord::Base
     ood_user = OodSupport::User.new(user)
     required_permissions = [:r, :x]
 
-    app_facl = OodSupport::ACLs::Nfs4ACL.get_facl(path: app)
+    app_facl = nil
     dataset_facl = nil
     begin
+      app_facl = OodSupport::ACLs::Nfs4ACL.get_facl(path: app)
       dataset_facl = OodSupport::ACLs::Nfs4ACL.get_facl(path: dataset)
     rescue OodSupport::InvalidPath, OodSupport::BadExitCode
       return false
@@ -221,9 +230,56 @@ class Mapping < ActiveRecord::Base
     errors.add(:base, "Dataset must exist.") unless dataset.exist?
   end
 
+  # Validator for app
+  def app_path_may_not_be_blank
+    errors.add(:base, "You must select an app.") unless app.exist?
+  end
+
   # Directories between $HOME and the configured database directory must be set to 775
   # @return [Boolean]
   def self.directory_perms_are_775?(directory)
     directory.stat.mode.to_s(8).end_with?('775')
+  end
+
+  # Checks to see if FACLs are modifiable by the user
+  #
+  # Note that this check assumes that no negative permissions have been set.
+  # Also we are not using an ownership check since that could mask problems
+  # with permissions that would impact other users.
+  #
+  # @return [Boolean]
+  def self.can_modify_facl?(pathname)
+    pathname.exist? && group_facl_entry_has_C_set?(pathname)
+  end
+
+  # Get the group owner's name
+  # @return [String]
+  def self.get_groupname_for_pathname(pathname)
+    Etc.getgrgid(pathname.stat.gid).name
+  end
+
+  # Check if pathname is owned by the admin_group
+  # @return [Boolean]
+  def self.app_has_correct_group_ownership?(pathname)
+    get_groupname_for_pathname(pathname) == Configuration.admin_group
+  end
+
+  # Does the app have permission modification enabled for the GROUP principle
+  # @return [Boolean]
+  def self.group_facl_entry_has_C_set?(pathname)
+    result = false
+    begin
+      result = OodSupport::ACLs::Nfs4ACL.get_facl(
+        path: pathname
+      ).entries.select{
+        |entry| entry.principle == 'GROUP'
+      }.first.permissions.include?(:C)
+    rescue OodSupport::InvalidPath, OodSupport::BadExitCode
+      logger.fatal { "Unable to check FACL for #{pathname} - is it on an NFS4 file system?" }
+    end
+
+    logger.debug { "group_facl_entry_has_C_set?(#{pathname}) == #{result}" }
+
+    result
   end
 end

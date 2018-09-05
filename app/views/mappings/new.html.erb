@@ -4,8 +4,8 @@
 <%= bootstrap_form_for(:mapping, url: mappings_path) do |f| %>
   <%= f.alert_message 'Please fix the errors below.' %>
 
-  <%= f.select :user, user_list, :include_blank => true, help: user_list_help  %>
-  <%= f.select :app, app_list.map{|uri| [get_app_name(uri), uri]}, :include_blank => true, help: app_list_help %>
+  <%= f.select :user, user_select_list, :include_blank => true, help: user_list_help  %>
+  <%= f.select :app, app_list.map{ |uri| [get_app_name(uri), uri]}, :include_blank => true, help: app_list_help %>
 
   <%= f.form_group :dataset, label: { text: 'Dataset (absolute path)' }, help: known_datasets_help do %>
     <% known_datasets.each do |dataset| %>

@@ -1,23 +1,23 @@
-require 'uri'
+require 'etc'
+require 'pathname'
 
 module MappingsHelper
   def user_list
-    users_from_group = ENV['USERS_FROM_GROUP']
-    result = `getent group #{users_from_group}`
+    Etc.getgrnam(Configuration.users_from_group).mem.sort
+  end
 
-    # example output
-    #    "wiagstf:*:5362:mrodgers,efranz\n"
-    result.strip.split(':')[3].split(',').sort
+  def user_select_list
+    user_list.map { |user| [display_username(user), user] }
   end
 
   def user_list_help
-    "Users list is built from users in group: #{ENV['USERS_FROM_GROUP']}"
+    "Users list is built from users in group: #{Configuration.users_from_group}"
   end
 
 
   # Get a list of the various Shiny apps
   def app_list
-    Dir.glob( Configuration.shared_apps_root.join('bc_shiny_*')).sort
+    Dir.glob( Configuration.shared_apps_root.join('bc_shiny_*')).sort.map{|path| Pathname.new(path)}
   end
 
   def app_list_help
@@ -26,7 +26,7 @@ module MappingsHelper
 
 
   def get_app_name(app_path)
-    URI(app_path).path.split('/').last
+    app_path.basename
   end
 
 
@@ -43,5 +43,14 @@ module MappingsHelper
 
   def known_datasets_help
    "Known datasets include files or directories under #{Configuration.app_dataset_root.to_s} and arbitrary paths already added to this database" 
+  end
+
+  # Attempt to get a full name for the user
+  # @return [String]
+  def display_username(user)
+    full_name = Etc.getpwnam(user).gecos.strip
+    full_name = full_name.empty? ? user : full_name
+
+    "#{full_name} - #{user}"
   end
 end
