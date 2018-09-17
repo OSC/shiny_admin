@@ -24,7 +24,7 @@ class Mapping < ActiveRecord::Base
 
   # @return [Array<String>]
   def self.datasets
-    select(:dataset).distinct.order(:dataset).pluck(:dataset)
+    select(:dataset).distinct.order(:dataset).pluck(:dataset).map{|dataset| Pathname.new(dataset)}
   end
 
   def self.dump_to_yaml
