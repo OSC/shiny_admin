@@ -29,9 +29,9 @@ module MappingsHelper
     app_path.basename
   end
 
-  def installed_datasets
+  def installed_datasets(app_dataset_root)
     results = []
-    Pathname.new(Configuration.app_dataset_root).find do |path|
+    app_dataset_root.find do |path|
       next unless path.directory?
 
       if path.children.any?{|path| path.basename.to_s.downcase == 'data.rds'}
@@ -49,7 +49,7 @@ module MappingsHelper
   # locations.
   def known_datasets
     # Take the union of the two sets of datasets
-    installed_datasets | Mapping.datasets
+    installed_datasets(Configuration.app_dataset_root) | Mapping.datasets
   end
 
   def known_datasets_help
