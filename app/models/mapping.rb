@@ -7,7 +7,7 @@ require 'yaml/store'
 
 class Mapping < ActiveRecord::Base
   attr_accessor :dataset_non_std_location_value
-  validates :user, :app, :dataset, presence: { message: "A %{attribute} must be selected." }
+  validates :user, :app, :dataset, presence: { message: " must be selected." }
   validate :dataset_path_must_exist
   validate :app_path_may_not_be_blank
   validates_uniqueness_of :user, scope: [:user, :app], message: "may only be mapped once to a given app."
@@ -24,7 +24,7 @@ class Mapping < ActiveRecord::Base
 
   # @return [Array<String>]
   def self.datasets
-    select(:dataset).distinct.order(:dataset).pluck(:dataset)
+    select(:dataset).distinct.order(:dataset).pluck(:dataset).map{|dataset| Pathname.new(dataset)}
   end
 
   def self.dump_to_yaml

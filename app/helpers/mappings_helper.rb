@@ -29,16 +29,27 @@ module MappingsHelper
     app_path.basename
   end
 
+  def installed_datasets(app_dataset_root)
+    results = []
+    app_dataset_root.find do |path|
+      next unless path.directory?
+
+      if path.children.any?{|path| path.basename.to_s.downcase == 'data.rds'}
+        results << path
+        Find.prune
+      end
+    end
+
+    results.sort
+  end
 
   # Get a list of datasets
   # The list will consist of datasets detected at the configured location and
   # datasets that have been saved to the database but are stored in nonstandard
   # locations.
   def known_datasets
-    installed_datasets = Dir.glob(Configuration.app_dataset_root.join('*')).sort
-
     # Take the union of the two sets of datasets
-    installed_datasets | Mapping.datasets
+    installed_datasets(Configuration.app_dataset_root) | Mapping.datasets
   end
 
   def known_datasets_help
