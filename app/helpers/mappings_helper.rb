@@ -2,8 +2,12 @@ require 'etc'
 require 'pathname'
 
 module MappingsHelper
+  def members_of_group(group)
+    `ldapsearch -LLL -x "(&(objectclass=oscGroup)(cn=#{group}))"`.scan(/member: cn=(.*),ou=people/).flatten
+  end
+
   def user_list
-    Etc.getgrnam(Configuration.users_from_group).mem.sort
+    members_of_group(Configuration.users_from_group).sort
   end
 
   def user_select_list
