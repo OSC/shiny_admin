@@ -6,8 +6,9 @@ require 'pathname'
 
 class MappingTest < ActiveSupport::TestCase
   def setup
-    @dataset_root = Pathname.new(ENV['APP_DATASET_ROOT'])
-    @app_root = Pathname.new(ENV['SHARED_APPS_ROOT'])
+    tmp = Rails.root.join('tmp').to_s
+    @dataset_root = Pathname.new(Dir.mktmpdir(nil, tmp))
+    @app_root = Pathname.new(Dir.mktmpdir(nil, tmp))
     @existent_ds_path_00 = @dataset_root.join('test_ds_00')
     @existent_ds_path_01 = @dataset_root.join('test_ds_01')
     @existent_app_path_00 = @app_root.join('test_app_00')
@@ -25,6 +26,8 @@ class MappingTest < ActiveSupport::TestCase
 
   def teardown
     @testing_dirs.each { |dir| FileUtils.rmdir(dir) }
+    FileUtils.remove_entry_secure(@app_root)
+    FileUtils.remove_entry_secure(@dataset_root)
   end
 
   # # ============================ #
