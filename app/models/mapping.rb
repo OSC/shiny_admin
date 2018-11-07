@@ -12,6 +12,24 @@ class Mapping < ActiveRecord::Base
   validate :app_path_may_not_be_blank
   validates_uniqueness_of :user, scope: [:user, :app], message: "may only be mapped once to a given app."
 
+  def self.installed_datasets(app_dataset_root)
+    results = []
+    app_dataset_root.find do |path|
+      next unless path.directory?
+
+      if path.children.any?{|path| path.basename.to_s.downcase == 'data.rds'}
+        results << path
+        Find.prune
+      end
+    end
+
+    results.sort
+  end
+
+  def self.known_datasets
+    installed_datasets(Configuration.app_dataset_root) | datasets
+  end
+
   # Type dataset as a Pathname
   def dataset
     Pathname.new(super.to_s)

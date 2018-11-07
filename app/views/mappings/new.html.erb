@@ -8,7 +8,7 @@
   <%= f.select :app, app_list.map{ |uri| [get_app_name(uri), uri]}, :include_blank => true, help: app_list_help %>
 
   <%= f.form_group :dataset, label: { text: 'Dataset (absolute path)' }, help: known_datasets_help do %>
-    <% known_datasets.each do |dataset| %>
+    <% Mapping.known_datasets.each do |dataset| %>
       <%= f.radio_button :dataset, dataset, label: dataset %>
     <% end %>
     <%= f.radio_button :dataset, 'dataset_non_std_location', label: 'Other' %>
