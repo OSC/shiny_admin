@@ -17,7 +17,7 @@ class Mapping < ActiveRecord::Base
     app_dataset_root.find do |path|
       next unless path.directory?
 
-      if path.children.any?{|path| path.basename.to_s.downcase == 'data.rds'}
+      if path.children.any?{|path| path.extname.to_s.downcase == '.rds'}
         results << path
         Find.prune
       end
