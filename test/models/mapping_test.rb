@@ -77,26 +77,25 @@ class MappingTest < ActiveSupport::TestCase
     assert !mapping.should_add_facl?(mapping.dataset)
   end
 
-  #FIXME: first assertion fails here
-  # def test_facls_are_not_removed_if_similar_mappings_exist
-  #   # Ensure that the group C attribute is set
-  #   `nfs4_setfacl -a 'A:g:GROUP@:rxtncCy' #{@existent_app_path_00.to_s}`
-  #   `nfs4_setfacl -a 'A:g:GROUP@:rxtncCy' #{@existent_app_path_01.to_s}`
-  #   `nfs4_setfacl -a 'A:g:GROUP@:rxtncCy' #{@existent_ds_path_00.to_s}`
+  def test_facls_are_not_removed_if_similar_mappings_exist
+    # Ensure that the group C attribute is set
+    `nfs4_setfacl -a 'A:g:GROUP@:rxtncCy' #{@existent_app_path_00.to_s}`
+    `nfs4_setfacl -a 'A:g:GROUP@:rxtncCy' #{@existent_app_path_01.to_s}`
+    `nfs4_setfacl -a 'A:g:GROUP@:rxtncCy' #{@existent_ds_path_00.to_s}`
 
-  #   mapping_a = Mapping.new(user: 'efranz', app: @existent_app_path_00, dataset: @existent_ds_path_00)
-  #   assert mapping_a.save
+    mapping_a = Mapping.new(user: 'efranz', app: @existent_app_path_00, dataset: @existent_ds_path_00)
+    assert mapping_a.save
 
-  #   mapping_b = Mapping.new(user: 'efranz', app: @existent_app_path_01, dataset: @existent_ds_path_00)
-  #   assert mapping_b.save
+    mapping_b = Mapping.new(user: 'efranz', app: @existent_app_path_01, dataset: @existent_ds_path_00)
+    assert mapping_b.save
 
-  #   mapping_b.expects(:rx_facl_exists?).returns(true).twice
+    mapping_b.expects(:rx_facl_exists?).returns(true).twice
 
-  #   # The app-user mapping is unique
-  #   assert mapping_b.should_remove_facl?(mapping_b.app)
-  #   # There are multiple instances of the same dataset
-  #   assert !mapping_b.should_remove_facl?(mapping_b.dataset)
-  # end
+    # The app-user mapping is unique
+    assert mapping_b.should_remove_facl?(mapping_b.app)
+    # There are multiple instances of the same dataset
+    assert !mapping_b.should_remove_facl?(mapping_b.dataset)
+  end
 
   def test_facls_are_removed_if_no_similar_mappings_exist
     # Ensure that the group C attribute is set
