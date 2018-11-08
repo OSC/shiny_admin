@@ -34,7 +34,7 @@ class MappingsHelperTest < ActionView::TestCase
   def setup
     @path_root = Pathname.new(Dir.mktmpdir)
     @paths = [
-      'datasets/franz_hista_alignment/data.rds',
+      'datasets/franz_hista_alignment/input_data.rds',
       'datasets/mrodgers_hista_alignment/data.csv',
       'datasets/PZS0714/foo/bar/data.rds',
       'datasets/PZS0714/foo/data.rds',
@@ -52,7 +52,7 @@ class MappingsHelperTest < ActionView::TestCase
   end
 
   def test_installed_datasets
-    detected_datasets = installed_datasets(@path_root)
+    detected_datasets = Mapping.installed_datasets(@path_root)
 
     expected_datasets = [
       'datasets/PZS0714/foo',
