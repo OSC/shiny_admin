@@ -21,11 +21,11 @@ module MappingsHelper
 
   # Get a list of the various Shiny apps
   def app_list
-    Dir.glob( Configuration.shared_apps_root.join('bc_shiny_*')).sort.map{|path| Pathname.new(path)}
+    Configuration.shared_apps_root.children.select(&:directory?).sort
   end
 
   def app_list_help
-    "App list is built from apps in #{Configuration.shared_apps_root.to_s} with the directory name starting with 'bc_shiny_'"
+    "App list is built from apps in #{Configuration.shared_apps_root.to_s} that are directories."
   end
 
 
