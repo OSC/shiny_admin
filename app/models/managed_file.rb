@@ -1,4 +1,6 @@
 class ManagedFile
+  FaclChangeReport = Struct.new(:path, :updated, :error)
+
   def file_acl_template
     <<~EOF
       A::OWNER@:rwatTnNcCoy
@@ -85,12 +87,13 @@ class ManagedFile
   def fix_facl(path, acl)
     if facls_different?(get_facl(path), acl)
       set_facl(path, acl)
-      [true, nil]
+
+      FaclChangeReport.new(path, true)
     else
-      [false, nil]
+      FaclChangeReport.new(path, false)
     end
   rescue => e
-    [false, "#{e.class}: #{e.message}"]
+    FaclChangeReport.new(path, false, "#{e.class}: #{e.message}")
   end
 
   def acl_for_path_under_dataset_root(path)
@@ -104,26 +107,14 @@ class ManagedFile
   end
 
   def fix_dataset_root_permissions
-    log = { updated: [], failed: [] }
-
-    Configuration.app_dataset_root.glob("**/*").each do |path|
-      updated, error = fix_facl(path, acl_for_path_under_dataset_root(path))
-      log[:updated] << path if updated
-      log[:failed] << { path: path, error: error } if error
-    end
-
-    log
+    Configuration.app_dataset_root.glob("**/*").map { |path|
+      fix_facl(path, acl_for_path_under_dataset_root(path))
+    }.select { |report| report.updated || report.error }
   end
 
   def fix_app_permissions
-    log = { updated: [], failed: [] }
-
-    Mapping.installed_apps.each do |path|
-      updated, error = fix_facl(path, app_acl_template(path))
-      log[:updated] << path if updated
-      log[:failed] << { path: path, error: error } if error
-    end
-
-    log
+    Mapping.installed_apps.map { |path|
+      fix_facl(path, app_acl_template(path))
+    }.select { |report| report.updated || report.error }
   end
 end
