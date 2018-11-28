@@ -29,6 +29,14 @@ class ManagedFile
     EOF
   end
 
+  def dataset_acl_template(path)
+    directory_user_restricted_acl_template(Mapping.users_that_have_mappings_to_dataset(path))
+  end
+
+  def app_acl_template(path)
+    directory_user_restricted_acl_template(Mapping.users_that_have_mappings_to_app(path))
+  end
+
   def setfacl(path, acl)
     o, e, s = Open3.capture3("nfs4_setfacl -S -", :stdin_data => acl)
     s.success? ? o : raise(e)
@@ -62,70 +70,58 @@ class ManagedFile
   end
 
   def managed_datasets
-    installed_datasets(Configuration.app_dataset_root)
+    @managed_datasets ||= installed_datasets(Configuration.app_dataset_root)
   end
 
-  def dirs
-    Configuration.app_dataset_root.glob("**/*").select(&:directory?) - managed_datasets
-  end
-
-  def files
-    Configuration.app_dataset_root.glob("**/*").select(&:file?)
+  def dataset?(path)
+    managed_datasets.include?(path.to_s)
   end
 
   # Set the facl on the path only if there is a difference.
   # Raise an exception if a problem occurs either getting or setting the facl.
   #
-  # @return true if FACL modified; false if no change applied
+  # @return [true,nil] if FACL modified; [false, nil] if no change applied;
+  #         [false, error_message] if exception occurred
   def fix_facl(path, acl)
     if facls_different?(get_facl(path), acl)
       set_facl(path, acl)
-      true
+      [true, nil]
     else
-      false
+      [false, nil]
     end
+  rescue => e
+    [false, "#{e.class}: #{e.message}"]
+  end
+
+  def acl_for_path_under_dataset_root(path)
+    if dataset?(path)
+      app_acl_template(path)
+    elsif path.directory?
+      directory_acl_template
+    else
+      file_acl_template
+    end
+  end
+
+  def fix_dataset_root_permissions
+    log = { updated: [], failed: [] }
+
+    Configuration.app_dataset_root.glob("**/*").each do |path|
+      updated, error = fix_facl(path, acl_for_path_under_dataset_root(path))
+      log[:updated] << path if updated
+      log[:failed] << { path: path, error: error } if error
+    end
+
+    log
   end
 
   def fix_app_permissions
     log = { updated: [], failed: [] }
 
     Mapping.installed_apps.each do |path|
-      begin
-        log[:updated] << path if fix_facl path, directory_user_restricted_acl_template(Mapping.users_that_have_mappings_to_app(path))
-      rescue => e
-        log[:failed] << { path: path, error: e.message }
-      end
-    end
-
-    log
-  end
-
-  # fix the permissions of all the files in the dataset_root directory
-  def fix_dataset_root_permissions
-    log = { updated: [], failed: [] }
-
-    dirs.each do |path|
-      begin
-        log[:updated] << path if fix_facl(path, directory_acl_template)
-      rescue => e
-        log[:failed] << { path: path, error: e.message }
-      end
-    end
-
-    files.each do |path|
-      begin
-        log[:updated] << path if fix_facl(path, file_acl_template)
-      rescue => e
-        log[:failed] << { path: path, error: e.message }
-      end
-    end
-
-    managed_datasets.each do |path|
-      begin
-        log[:updated] << path if fix_facl(path, directory_user_restricted_acl_template(Mapping.users_that_have_mappings_to_dataset(path)))
-      rescue => e
-        log[:failed] << { path: path, error: e.message }
-      end
+      updated, error = fix_facl(path, app_acl_template(path))
+      log[:updated] << path if updated
+      log[:failed] << { path: path, error: error } if error
     end
 
     log
