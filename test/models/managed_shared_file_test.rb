@@ -71,7 +71,7 @@ class ManagedSharedFileTest < ActiveSupport::TestCase
       assert_equal ["efranz"], Mapping.users_that_have_mappings_to_app(app_for_efranz)
       assert_equal [], Mapping.users_that_have_mappings_to_app(tmpdir)
 
-      assert 755, app_for_efranz.stat.mode.to_s(8).last(3)
+      assert 755, mode(app_for_efranz)
 
       # execute
       changes = ManagedSharedFile.new.fix_app_permissions(tmpdir.children())
@@ -79,9 +79,9 @@ class ManagedSharedFileTest < ActiveSupport::TestCase
 
       # verify
       assert_equal 3, changes.count # 3 directories affected
-      assert 770, app_for_efranz.stat.mode.to_s(8).last(3)
-      assert 770, app_for_mrodgers_and_alanc.stat.mode.to_s(8).last(3)
-      assert 770, app_no_one_can_access.stat.mode.to_s(8).last(3)
+      assert 770, mode(app_for_efranz)
+      assert 770, mode(app_for_mrodgers_and_alanc)
+      assert 770, mode(app_no_one_can_access)
       assert_equal ["efranz"], user_principles(app_for_efranz)
       assert_equal ["alanc", "mrodgers"], user_principles(app_for_mrodgers_and_alanc)
       assert_equal [], user_principles(app_no_one_can_access)
@@ -92,7 +92,14 @@ class ManagedSharedFileTest < ActiveSupport::TestCase
     end
   end
 
+  # candidates for OodSupport
+  private
+
   def user_principles(path)
     OodSupport::ACLs::Nfs4ACL.get_facl(path: path).entries.map(&:principle) - ["OWNER", "GROUP", "EVERYONE"]
+  end
+
+  def mode(path)
+    Pathname.new(path).stat.mode.to_s(8).last(3)
   end
 end
