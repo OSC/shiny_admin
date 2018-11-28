@@ -40,7 +40,7 @@ class ManagedFile
   end
 
   def setfacl(path, acl)
-    o, e, s = Open3.capture3("nfs4_setfacl -S -", :stdin_data => acl)
+    o, e, s = Open3.capture3("nfs4_setfacl -S -", path.to_s, :stdin_data => acl)
     s.success? ? o : raise(e)
   end
 
@@ -65,7 +65,6 @@ class ManagedFile
   end
 
   # remove g from A:g:GROUP line
-  # remove o from A::OWNER@: line
   # strip whitespace
   def sanitize_acl_for_comparison(acl)
     acl.sub(/A:g:GROUP/, 'A::GROUP').strip
