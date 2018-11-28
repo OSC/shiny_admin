@@ -40,7 +40,7 @@ class ManagedSharedFile
   end
 
   def setfacl(path, acl)
-    o, e, s = Open3.capture3("nfs4_setfacl -S -", path.to_s, :stdin_data => acl)
+    o, e, s = Open3.capture3("nfs4_setfacl", "-S", "-", path.to_s, :stdin_data => acl)
     s.success? ? o : raise(e)
   end
 
@@ -84,8 +84,8 @@ class ManagedSharedFile
   # @return [true,nil] if FACL modified; [false, nil] if no change applied;
   #         [false, error_message] if exception occurred
   def fix_facl(path, acl)
-    if facls_different?(get_facl(path), acl)
-      set_facl(path, acl)
+    if facls_different?(getfacl(path), acl)
+      setfacl(path, acl)
 
       FaclChangeReport.new(path, true)
     else
@@ -119,7 +119,7 @@ class ManagedSharedFile
   # @param apps [Array<Pathname>] - Mapping.installed_apps
   # @return [Array<FaclChangeReport>] array of report objects for each path that was updated or each error
   def fix_app_permissions(apps)
-    .map { |path|
+    apps.map { |path|
       fix_facl(path, app_acl_template(path))
     }.select { |report| report.updated || report.error }
   end
