@@ -1,4 +1,4 @@
-class ManagedFile
+class ManagedSharedFile
   FaclChangeReport = Struct.new(:path, :updated, :error)
 
   def file_acl_template
