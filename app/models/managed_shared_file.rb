@@ -84,6 +84,8 @@ class ManagedSharedFile
   # @return [true,nil] if FACL modified; [false, nil] if no change applied;
   #         [false, error_message] if exception occurred
   def fix_facl(path, acl)
+    path = Pathname.new(path)
+
     if facls_different?(getfacl(path), acl)
       setfacl(path, acl)
 
