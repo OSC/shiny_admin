@@ -1,5 +1,5 @@
 class ManagedSharedFile
-  FaclChangeReport = Struct.new(:path, :updated, :error)
+  ChangeReport = Struct.new(:path, :updated, :error)
 
   def file_acl_template
     <<~EOF
@@ -87,12 +87,12 @@ class ManagedSharedFile
     if facls_different?(getfacl(path), acl)
       setfacl(path, acl)
 
-      FaclChangeReport.new(path, true)
+      ChangeReport.new(path, true)
     else
-      FaclChangeReport.new(path, false)
+      ChangeReport.new(path, false)
     end
   rescue => e
-    FaclChangeReport.new(path, false, "#{e.class}: #{e.message}")
+    ChangeReport.new(path, false, "#{e.class}: #{e.message}")
   end
 
   # Fix permissions for datasets, using Mapping.users_that_have_mappings_to_dataset(path) to determine
@@ -100,7 +100,7 @@ class ManagedSharedFile
   #
   # @param dataset_root [Pathname] - Configuration.app_dataset_root
   # @param datasets [Array<Pathname>] - installed_datasets(Configuration.app_dataset_root) to determine which paths under dataset_root are actual datasets
-  # @return [Array<FaclChangeReport>] array of report objects for each path that was updated or each error
+  # @return [Array<ChangeReport>] array of report objects for each path that was updated or each error
   def fix_dataset_root_permissions(dataset_root, datasets)
     dataset_root.glob("**/*").map { |path|
       if datasets.include?(path)
@@ -117,10 +117,35 @@ class ManagedSharedFile
   # if the user should access
   #
   # @param apps [Array<Pathname>] - Mapping.installed_apps
-  # @return [Array<FaclChangeReport>] array of report objects for each path that was updated or each error
+  # @return [Array<ChangeReport>] array of report objects for each path that was updated or each error
   def fix_app_permissions(apps)
     apps.map { |path|
       fix_facl(path, app_acl_template(path))
     }.select { |report| report.updated || report.error }
+  end
+
+  # group id
+  def fix_group_ownership(path, group)
+    path = Pathname.new(path)
+    gid = OodSupport::Group.new(group).id
+
+    if path.stat.gid != gid
+      path.chown nil, gid
+      ChangeReport.new(path, true)
+    else
+      ChangeReport.new(path, false)
+    end
+  rescue => e
+    ChangeReport.new(path, false, "#{e.class}: #{e.message}")
+  end
+
+  def fix_group_ownership_for_files(files, group)
+    files.map { |path|
+      fix_group_ownership path, group
+    }.select { |report| report.updated || report.error }
+  end
+
+  def fix_dataset_root_group_ownership(dataset_root, group)
+    fix_group_ownership dataset_root.glob("**/*"), group
   end
 end

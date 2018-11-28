@@ -52,6 +52,7 @@ class ManagedSharedFileTest < ActiveSupport::TestCase
     skip "test requires nfs4_setfacl and nfs4_getfacl" if `which nfs4_setfacl`.empty?
     project_dir = Pathname.new('/fs/project/PZS0714')
     skip "need to test in projects space: #{project_dir}" unless project_dir.executable? && project_dir.writable?
+    skip "need to be part of group wiagall" unless process_in_group("wiagall")
 
     # setup
     # create dirs in tmpdir (app_for_efranz, app_for_mrodgers, app_no_one_can_access)
@@ -89,6 +90,15 @@ class ManagedSharedFileTest < ActiveSupport::TestCase
       # execute again and verify no changes required (since its idempotent)
       changes = ManagedSharedFile.new.fix_app_permissions(tmpdir.children())
       assert_equal 0, changes.count, "Files should have already had permissions fixed: #{changes.inspect}"
+
+      # fix group ownership
+      refute_equal app_for_efranz.stat.gid, OodSupport::Group.new('wiagall').id
+      changes = ManagedSharedFile.new.fix_group_ownership_for_files(tmpdir.children(), 'wiagall')
+      assert_equal 3, changes.count # 3 directories affected
+      assert_equal app_for_efranz.stat.gid, OodSupport::Group.new('wiagall').id
+
+      changes = ManagedSharedFile.new.fix_group_ownership_for_files(tmpdir.children(), 'wiagall')
+      assert_equal 0, changes.count, "Files should have already had group ownership fixed: #{changes.inspect}"
     end
   end
 
@@ -101,5 +111,9 @@ class ManagedSharedFileTest < ActiveSupport::TestCase
 
   def mode(path)
     Pathname.new(path).stat.mode.to_s(8).last(3)
+  end
+
+  def process_in_group(group)
+    OodSupport::Process.groups.map(&:name).include?(group)
   end
 end
