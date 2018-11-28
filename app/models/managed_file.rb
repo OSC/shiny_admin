@@ -95,24 +95,31 @@ class ManagedFile
     FaclChangeReport.new(path, false, "#{e.class}: #{e.message}")
   end
 
-  def acl_for_path_under_dataset_root(path)
-    if dataset?(path)
-      app_acl_template(path)
-    elsif path.directory?
-      directory_acl_template
-    else
-      file_acl_template
-    end
-  end
-
-  def fix_dataset_root_permissions
-    Configuration.app_dataset_root.glob("**/*").map { |path|
-      fix_facl(path, acl_for_path_under_dataset_root(path))
+  # Fix permissions for datasets, using Mapping.users_that_have_mappings_to_dataset(path) to determine
+  # if the user should access
+  #
+  # @param dataset_root [Pathname] - Configuration.app_dataset_root
+  # @param datasets [Array<Pathname>] - installed_datasets(Configuration.app_dataset_root) to determine which paths under dataset_root are actual datasets
+  # @return [Array<FaclChangeReport>] array of report objects for each path that was updated or each error
+  def fix_dataset_root_permissions(dataset_root, datasets)
+    dataset_root.glob("**/*").map { |path|
+      if datasets.include?(path)
+        fix_facl path, dataset_acl_template(path)
+      elsif
+        fix_facl path, directory_acl_template
+      else
+        fix_facl path, file_acl_template
+      end
     }.select { |report| report.updated || report.error }
   end
 
-  def fix_app_permissions
-    Mapping.installed_apps.map { |path|
+  # Fix permissions for apps, using Mapping.users_that_have_mappings_to_app(path) to determine
+  # if the user should access
+  #
+  # @param apps [Array<Pathname>] - Mapping.installed_apps
+  # @return [Array<FaclChangeReport>] array of report objects for each path that was updated or each error
+  def fix_app_permissions(apps)
+    .map { |path|
       fix_facl(path, app_acl_template(path))
     }.select { |report| report.updated || report.error }
   end
