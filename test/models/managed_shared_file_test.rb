@@ -47,7 +47,6 @@ class ManagedSharedFileTest < ActiveSupport::TestCase
     assert ManagedSharedFile.new.facls_different?(acl1, acl2)
   end
 
-  # FIXME: what about fixing the group (chgrp PAS1429) and stickybit?
   def test_app_permissions
     skip "test requires nfs4_setfacl and nfs4_getfacl" if `which nfs4_setfacl`.empty?
     project_dir = Pathname.new('/fs/project/PZS0714')
