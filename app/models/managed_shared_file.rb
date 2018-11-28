@@ -104,11 +104,11 @@ class ManagedSharedFile
   # @param datasets [Array<Pathname>] - installed_datasets(Configuration.app_dataset_root) to determine which paths under dataset_root are actual datasets
   # @return [Array<ChangeReport>] array of report objects for each path that was updated or each error
   def fix_dataset_root_permissions(dataset_root, datasets)
-    dataset_root.glob("**/*").map { |path|
+    dataset_root.find.to_a.map { |path|
       if datasets.include?(path)
         fix_facl path, dataset_acl_template(path)
-      elsif
-        fix_facl path, directory_acl_template
+      elsif path.directory?
+        fix_facl(path, directory_acl_template)
       else
         fix_facl path, file_acl_template
       end
@@ -148,6 +148,6 @@ class ManagedSharedFile
   end
 
   def fix_dataset_root_group_ownership(dataset_root, group)
-    fix_group_ownership dataset_root.glob("**/*"), group
+    fix_group_ownership_for_files dataset_root.find.to_a, group
   end
 end
