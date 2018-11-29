@@ -7,10 +7,16 @@
   <%= f.select :user, user_select_list, :include_blank => true, help: user_list_help  %>
   <%= f.select :app, app_list.map{ |uri| [get_app_name(uri), uri]}, :include_blank => true, help: app_list_help %>
 
+
   <%= f.form_group :dataset, label: { text: 'Dataset (absolute path)' }, help: known_datasets_help do %>
-    <% Mapping.known_datasets.each do |dataset| %>
-      <%= f.radio_button :dataset, dataset, label: dataset %>
+    <table class="table table-striped">
+    <% Mapping.known_datasets.each_with_index do |dataset, index| %>
+      <tr>
+        <td><%= f.radio_button :dataset, dataset, label: dataset, inline: true %></td>
+        <td><%= render partial: "edit_dataset_buttons", locals: { dataset_path: dataset }%></td>
+      </tr>
     <% end %>
+    </table>
     <%= f.radio_button :dataset, 'dataset_non_std_location', label: 'Other' %>
     <%= f.text_field :dataset_non_std_location_value, hide_label: true, disabled: true %>
   <% end %>
