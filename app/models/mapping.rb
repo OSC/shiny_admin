@@ -30,6 +30,22 @@ class Mapping < ActiveRecord::Base
     installed_datasets(Configuration.app_dataset_root) | datasets
   end
 
+  # Given the full path to the app, provide a list of users
+  # that should be granted access to that app based on mappings
+  #
+  # @return [Array<String>] users that have mappings to app
+  def self.users_that_have_mappings_to_app(path)
+    Mapping.where(app: path).pluck("DISTINCT user")
+  end
+
+  # Given the full path to the dataset, provide a list of users
+  # that should be granted access to that dataset based on mappings
+  #
+  # @return [Array<String>] users that have mappings to dataset
+  def self.users_that_have_mappings_to_dataset(path)
+    Mapping.where(dataset: path).pluck("DISTINCT user")
+  end
+
   # Type dataset as a Pathname
   def dataset
     Pathname.new(super.to_s)
@@ -106,7 +122,11 @@ class Mapping < ActiveRecord::Base
   #
   # @return [Pathname]
   def self.installed_apps_with_busted_permissions?
-    ApplicationController.helpers.app_list.select { |app| ! can_modify_facl?(app) }
+    installed_apps.select { |app| ! can_modify_facl?(app) }
+  end
+
+  def self.installed_apps
+    ApplicationController.helpers.app_list
   end
 
   # Custom save method
