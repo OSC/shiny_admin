@@ -1,12 +1,63 @@
 <% if Mapping.has_directory_permission_errors? %>
   <div class="alert alert-danger" role="alert">
-    <div class="panel-body">Warning: certain directories owned by <code><%= ENV['APP_OWNER'] %></code> have incorrect permissions which will prevent app and dataset sharing. As owner of these directories run the following to set the correct permissions:</div>
-    <div class="panel-body"><pre><code><%= @directory_permissions_command %></code></pre></div>
+    <button type="button" class="close" data-dismiss="alert">
+      <span aria-hidden="true">&times;</span>
+      <span class="sr-only">Close</span>
+    </button>
+    <p>Warning: certain directories owned by <code><%= ENV['APP_OWNER'] %></code> have incorrect permissions which will prevent app and dataset sharing. As owner of these directories run the following to set the correct permissions:</p>
+    <p><pre><code><%= @directory_permissions_command %></code></pre></p>
   </div>
 <% end %>
-<div class="panel">
-  <a class="btn btn-large btn-primary" href="<%= new_mapping_path %>">Add New Mapping</a>
+
+<% if @permission_changes && @permission_changes.reject(&:updated).any? %>
+<div class="alert alert-warning alert-dismissible" role="alert">
+  <button type="button" class="close" data-dismiss="alert">
+    <span aria-hidden="true">&times;</span>
+    <span class="sr-only">Close</span>
+  </button>
+  Updating permissions resulted in errors:
+
+  <ul>
+    <% @permission_changes.reject(&:updated).each do |c| %>
+      <li><%= "#{c.type}: #{c.path} - #{c.error}" %></li>
+    <% end %>
+  </ul>
 </div>
+<% end %>
+
+<% if @permission_changes &&  %>
+<div class="alert alert-success alert-dismissible" role="alert">
+  <button type="button" class="close" data-dismiss="alert">
+    <span aria-hidden="true">&times;</span>
+    <span class="sr-only">Close</span>
+  </button>
+  Updated permissions:
+
+  <% if @permission_changes.select(&:updated).any? %>
+  <ul>
+    <% @permission_changes.select(&:updated).each do |c| %>
+      <li><%= "#{c.type}: #{c.path}" %></li>
+    <% end %>
+  </ul>
+  <% else %>
+  No updates required.
+  <% end %>
+</div>
+<% end %>
+
+
+<div class="row">
+<div class="col-md-12">
+    <%= link_to "Add New Mapping", new_mapping_path, class: "btn btn-large btn-primary" %>
+    <%= link_to "Fix Permissions", fix_permissions_mappings_path, method: 'put', class: "btn btn-large btn-warning" %>
+    <hr>
+</div>
+</div>
+
+
+<div class="row">
+<div class="col-md-12">
+
 <table class="table data-table">
   <thead>
     <th>User</th>
@@ -35,3 +86,6 @@
     <% end %>
   </tbody>
 </table>
+
+</div>
+</div>

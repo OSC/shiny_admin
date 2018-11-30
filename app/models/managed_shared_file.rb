@@ -1,5 +1,5 @@
 class ManagedSharedFile
-  ChangeReport = Struct.new(:path, :updated, :error)
+  ChangeReport = Struct.new(:type, :path, :updated, :error)
 
   def file_acl_template
     <<~EOF
@@ -89,12 +89,12 @@ class ManagedSharedFile
     if facls_different?(getfacl(path), acl)
       setfacl(path, acl)
 
-      ChangeReport.new(path, true)
+      ChangeReport.new(:facl, path, true)
     else
-      ChangeReport.new(path, false)
+      ChangeReport.new(:facl, path, false)
     end
   rescue => e
-    ChangeReport.new(path, false, "#{e.class}: #{e.message}")
+    ChangeReport.new(:facl, path, false, "#{e.class}: #{e.message}")
   end
 
   # Fix permissions for datasets, using Mapping.users_that_have_mappings_to_dataset(path) to determine
@@ -133,12 +133,12 @@ class ManagedSharedFile
 
     if path.stat.gid != gid
       path.chown nil, gid
-      ChangeReport.new(path, true)
+      ChangeReport.new(:group, path, true)
     else
-      ChangeReport.new(path, false)
+      ChangeReport.new(:group, path, false)
     end
   rescue => e
-    ChangeReport.new(path, false, "#{e.class}: #{e.message}")
+    ChangeReport.new(:group, path, false, "#{e.class}: #{e.message}")
   end
 
   def fix_group_ownership_for_files(files, group)

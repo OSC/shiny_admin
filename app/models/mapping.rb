@@ -30,12 +30,25 @@ class Mapping < ActiveRecord::Base
     installed_datasets(Configuration.app_dataset_root) | datasets
   end
 
+  def self.fix_permissions
+    mgr = ManagedSharedFile.new
+    apps = installed_apps
+    datasets = installed_datasets(Configuration.app_dataset_root)
+    dataset_root = Configuration.app_dataset_root
+    group = 'PAS1429' #FIXME
+
+    mgr.fix_app_permissions(apps) + \
+    mgr.fix_dataset_root_permissions(dataset_root, datasets) + \
+    mgr.fix_group_ownership_for_files(apps, group) + \
+    mgr.fix_dataset_root_group_ownership(dataset_root, group)
+  end
+
   # Given the full path to the app, provide a list of users
   # that should be granted access to that app based on mappings
   #
   # @return [Array<String>] users that have mappings to app
   def self.users_that_have_mappings_to_app(path)
-    Mapping.where(app: path).pluck("DISTINCT user")
+    Mapping.where(app: path.to_s).pluck("DISTINCT user")
   end
 
   # Given the full path to the dataset, provide a list of users
@@ -43,7 +56,7 @@ class Mapping < ActiveRecord::Base
   #
   # @return [Array<String>] users that have mappings to dataset
   def self.users_that_have_mappings_to_dataset(path)
-    Mapping.where(dataset: path).pluck("DISTINCT user")
+    Mapping.where(dataset: path.to_s).pluck("DISTINCT user")
   end
 
   # Type dataset as a Pathname
