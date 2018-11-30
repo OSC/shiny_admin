@@ -2,8 +2,17 @@ require 'ood_support'
 
 
 class MappingsController < ApplicationController
+  # GET /mappings
   def index
     @directory_permissions_command = Mapping.directory_permissions_command
+  end
+
+  # PUT /mappings/fix_permissions
+  def fix_permissions
+    @directory_permissions_command = Mapping.directory_permissions_command
+    @permission_changes = Mapping.fix_permissions
+
+    render :index
   end
 
 
