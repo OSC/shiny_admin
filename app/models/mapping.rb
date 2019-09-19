@@ -10,7 +10,7 @@ class Mapping < ActiveRecord::Base
   validates :user, presence: { message: " must be selected." }
   validate :dataset_path_must_exist
   validate :app_path_may_not_be_blank
-  validates_uniqueness_of :user, scope: [:user, :app], message: "may only be mapped once to a given app."
+  validates_uniqueness_of :user, scope: [:user, :app, :dataset], message: "may only be mapped once to a given app and dataset."
 
   def self.installed_datasets(app_dataset_root)
     results = []
