@@ -35,7 +35,7 @@ class Mapping < ActiveRecord::Base
     apps = installed_apps
     datasets = installed_datasets(Configuration.app_dataset_root)
     dataset_root = Configuration.app_dataset_root
-    group = 'PAS1429' #FIXME
+    group = Configuration.users_from_group
 
     mgr.fix_app_permissions(apps) + \
     mgr.fix_dataset_root_permissions(dataset_root, datasets) + \
